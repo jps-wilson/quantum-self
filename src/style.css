@@ -1,0 +1,31 @@
+/* BASE RESET & BODY STYLES */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Space Mono", monospace;
+  background: #000;
+  color: #00ff41;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+/* CRT Monitor - Physical Housing */
+.crt-monitor {
+  position: relative;
+  width: 900px;
+  height: 650px;
+  background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
+  border-radius: 20px;
+  padding: 40px;
+  /* glow effect (monitor is "powered on" */
+  box-shadow:
+    0 0 100px rgba(0, 255, 65, 0.3),
+    inset 0 0 40px rgba(0, 0, 0, 0.8);
+}
