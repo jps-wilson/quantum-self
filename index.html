@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Quantum Self</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="src/style.css">
+</head>
+
+<body>
+    <div class="terminal-setup"></div>
+    <!-- CRT Monitor -->
+    <div class="crt-monitor">
+        <!-- Single thick bezel -->
+        <div class="bezel">
+            <!-- Glass surface with haze -->
+            <div class="crt-glass">
+                <!-- Screen content -->
+                <div class="crt-screen">
+                    <div class="terminal-body" id="terminal">
+                        <!-- Content will be added by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monitor base controls -->
+        <div class="monitor-controls">
+            <div class="disk-drive"></div>
+            <div class="power-switch" id="powerSwitch">
+                <div class="switch-toggle" id="switchToggle"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="three-container"></div>
+    <script type="module" src="/src/main.js"></script>
+</body>
+
+</html>
