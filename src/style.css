@@ -310,6 +310,8 @@ pre.terminal-line {
   position: relative;
   z-index: 2;
   margin-bottom: 4px;
+  line-height: 1;
+  padding: 4px 0;
 }
 
 /* Text glow */
