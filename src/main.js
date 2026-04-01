@@ -3,6 +3,11 @@ const terminal = document.getElementById("terminal");
 // makes terminal focusable
 terminal.setAttribute("tabindex", "0");
 terminal.innerHTML = `
+
+  <div class="terminal-line glow-white">
+    NEGOTIATING SESSION KEYS...
+  </div>
+
   <div class="terminal-line glow-white">
     <span class="glow-amber">quantum@self:~$</span> initializing...
   </div>
