@@ -92,15 +92,29 @@ terminal.innerHTML = `<div class="terminal-line glow-white">System offline. Pres
 // ============================================
 //              POWER BUTTON HANDLER
 // ============================================
+let bootTimeouts = []; // track all setTimeout IDs
+
 powerSwitch.addEventListener("click", () => {
   if (!isPoweredOn) {
+    // power on
     isPoweredOn = true;
+    isBooting = true;
     powerSwitch.classList.add("on");
     startBootSequence();
-  } else if ((isPoweredOn = true)) {
+  } else if (isPoweredOn && !isBooting) {
+    // power off - even during boot
     isPoweredOn = false;
+    bootComplete = false;
+    awaitingInput = null;
+    currentInput = "";
+    username = "";
+
+    // clear all pending boot timeouts
+    bootTimeouts.forEach((timeout) => clearTimeout(timeout));
+    bootTimeouts = [];
+
     powerSwitch.classList.remove("on");
-    // TODO: function to clear the screen
+    terminal.innerHTML = `<div class="terminal-line glow-white">System offline. Press power button to boot...</div>`; // TODO: adjust this to "off-screen" once built
   }
 });
 
@@ -109,23 +123,29 @@ powerSwitch.addEventListener("click", () => {
 // ============================================
 function startBootSequence() {
   terminal.innerHTML = "";
-  let currentDelay = 0;
+  bootTimeouts = []; // reset timeout array
 
   bootMessages.forEach((msg, index) => {
-    setTimeout(() => {
+    const timeout = setTimeout(() => {
+      if (!isPoweredOn) return; // don't continue if powered off
+
       const line = document.createElement("div");
       line.className = `terminal-line ${msg.class}`;
       line.textContent = msg.text;
       terminal.appendChild(line);
       terminal.scrollTop = terminal.scrollHeight;
 
-      // after last message, show QUANTUM logo
+      // after last meg, show QUANTUM logo
       if (index === bootMessages.length - 1) {
-        setTimeout(() => {
+        const logoTimeout = setTimeout(() => {
+          if (!isPoweredOn) return;
           showQuantumLogo();
         }, 300);
+        bootTimeouts.push(logoTimeout);
       }
     }, msg.delay);
+
+    bootTimeouts.push(timeout); // track this timeout
   });
 }
 
@@ -249,6 +269,7 @@ function initializeUser() {
 
 function showCommandPrompt() {
   bootComplete = true;
+  isBooting = false; // Boot sequence is done
   const line = document.createElement("div");
   line.className = "terminal-line glow-white";
   line.innerHTML = `<span class="glow-amber">quantum@self:~$</span> <span id="cmd-input" class="glow-white"></span><span class="cursor" style="display: inline-block; width: 8px; height: 14px; background: #ffa657; margin-left: 2px; animation: blink 1s infinite;"></span>`;
