@@ -4,8 +4,7 @@ import { OrbitControls } from "three/examples/jsm/Addons.js";
 
 // ============================================
 //                  CONFIG
-// All tweakable values live here — no need to
-// hunt through the file to change things.
+//      All tweakable values live here
 // ============================================
 const CONFIG = {
   camera: {
@@ -29,8 +28,8 @@ const CONFIG = {
       "Loading kernel...",
       "System ready.",
     ],
-    typingSpeed: 20,      // chars per second
-    linePause: 0.5,       // seconds between lines
+    typingSpeed: 20, // chars per second
+    linePause: 0.5, // seconds between lines
     font: "20px monospace",
     color: "#00ff41",
     glowBlur: 8,
@@ -47,16 +46,20 @@ const CONFIG = {
     emissiveVariance: 0.06,
   },
   models: [
-    { path: "/models/desk.glb",    position: [0, 0,    0], scale: null              },
-    { path: "/models/monitor.glb", position: [0, 0.55, 0], scale: [0.13, 0.13, 0.13] },
+    { path: "/models/desk.glb", position: [0, 0, 0], scale: null },
+    {
+      path: "/models/monitor.glb",
+      position: [0, 0.55, 0],
+      scale: [0.13, 0.13, 0.13],
+    },
   ],
   lighting: {
     ambient: { color: 0x404040, intensity: 1.5 },
-    bulb:    { color: 0xffa500, intensity: 3, distance: 50, position: [0, 3, 0] },
+    bulb: { color: 0xffa500, intensity: 3, distance: 50, position: [0, 3, 0] },
   },
   scanlines: { gap: 4, thickness: 2, opacity: 0.25 },
-  noise:     { count: 30, maxOpacity: 0.15 },
-  vignette:  { innerRadius: 0.25, outerRadius: 0.75, opacity: 0.8 },
+  noise: { count: 30, maxOpacity: 0.15 },
+  vignette: { innerRadius: 0.25, outerRadius: 0.75, opacity: 0.8 },
 };
 
 // ============================================
@@ -195,8 +198,12 @@ function updateTerminalCanvas() {
   // vignette
   const { innerRadius, outerRadius, opacity: vOpacity } = CONFIG.vignette;
   const vignette = ctx.createRadialGradient(
-    width / 2, height / 2, height * innerRadius,
-    width / 2, height / 2, height * outerRadius,
+    width / 2,
+    height / 2,
+    height * innerRadius,
+    width / 2,
+    height / 2,
+    height * outerRadius,
   );
   vignette.addColorStop(0, "rgba(0,0,0,0)");
   vignette.addColorStop(1, `rgba(0,0,0,${vOpacity})`);
@@ -321,7 +328,8 @@ function animate(timestamp) {
   // screen flicker
   if (screenMaterial) {
     screenMaterial.emissiveIntensity =
-      CONFIG.screen.emissiveBase + Math.random() * CONFIG.screen.emissiveVariance;
+      CONFIG.screen.emissiveBase +
+      Math.random() * CONFIG.screen.emissiveVariance;
   }
 
   // hover detection
