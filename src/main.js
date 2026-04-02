@@ -2,6 +2,9 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
 
+// Global reference to monitor
+let monitorModel = null;
+
 // ============================================
 //              SCENE SETUP
 // ============================================
@@ -29,6 +32,14 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.05;
 controls.target.set(0, 1, 0);
+
+// ============================================
+//              RAYCASTING SETUP
+// ============================================
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+let isHoveringMonitor = false; // tracking if hovering over monitor
 
 // ============================================
 //                 LIGHTING
@@ -73,7 +84,7 @@ loader.load(
 loader.load(
   "/models/monitor.glb",
   (gltf) => {
-    const monitorModel = gltf.scene;
+    monitorModel = gltf.scene;
     monitorModel.position.set(0, 0.55, 0);
     monitorModel.scale.set(0.13, 0.13, 0.13);
     scene.add(monitorModel);
@@ -84,12 +95,52 @@ loader.load(
 );
 
 // ============================================
+//              MOUSE INTERACTION
+// ============================================
+
+window.addEventListener("mousemove", (event) => {
+  // convert mouse position to normalized device coordinates
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+});
+
+// click handler
+window.addEventListener("click", () => {
+  if (isHoveringMonitor) {
+    console.log("Monitor clicked");
+    // TODO: Show "Press E to power on" UI
+  }
+});
+
+// ============================================
 //              ANIMATION LOOP
 // ============================================
 
 function animate() {
   requestAnimationFrame(animate);
   controls.update();
+
+  // check if hovering over monitor
+  if (monitorModel) {
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObject(monitorModel, true);
+
+    if (intersects.length > 0) {
+      // Hovering over monitor
+      if (!isHoveringMonitor) {
+        isHoveringMonitor = true;
+        document.body.style.cursor = "pointer";
+        console.log("Hovering over monitor");
+      }
+    } else {
+      // not hovering
+      if (isHoveringMonitor) {
+        isHoveringMonitor = false;
+        document.body.style.cursor = "default";
+        console.log("Left monitor");
+      }
+    }
+  }
   renderer.render(scene, camera);
 }
 
