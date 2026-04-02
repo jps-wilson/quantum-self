@@ -4,32 +4,22 @@ import { OrbitControls } from "three/examples/jsm/Addons.js";
 
 // ============================================
 //                  CONFIG
-//      All tweakable values live here
 // ============================================
 const CONFIG = {
-  camera: {
-    fov: 75,
-    near: 0.1,
-    far: 1000,
-    position: [0, 1.5, 3],
-  },
-  controls: {
-    dampingFactor: 0.05,
-    target: [0, 1, 0],
-  },
-  canvas: {
-    width: 512,
-    height: 384,
-  },
+  camera: { fov: 75, near: 0.1, far: 1000, position: [0, 1.5, 3] },
+  controls: { dampingFactor: 0.05, target: [0, 1, 0] },
+  canvas: { width: 512, height: 384 },
   terminal: {
-    lines: [
+    bootLines: [
       "QUANTUM BIOS v2.4.1",
       "Initializing...",
       "Loading kernel...",
       "System ready.",
+      "",
+      "quantum@self:~$ _",
     ],
-    typingSpeed: 20, // chars per second
-    linePause: 0.5, // seconds between lines
+    typingSpeed: 20,
+    linePause: 0.5,
     font: "20px monospace",
     color: "#00ff41",
     glowBlur: 8,
@@ -45,6 +35,10 @@ const CONFIG = {
     emissiveBase: 0.28,
     emissiveVariance: 0.06,
   },
+  powerButton: {
+    possibleMeshNames: ["Plane008_Material002_0", "Plane010_Material002_0"],
+  },
+  powerOn: { warmupDuration: 0.5, flashDuration: 0.1, flashIntensity: 2.0 },
   models: [
     { path: "/models/desk.glb", position: [0, 0, 0], scale: null },
     {
@@ -62,10 +56,7 @@ const CONFIG = {
   vignette: { innerRadius: 0.25, outerRadius: 0.75, opacity: 0.8 },
 };
 
-// ============================================
-//              SCENE SETUP
-// ============================================
-
+// Scene setup
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x000000);
 
@@ -82,43 +73,33 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 document.getElementById("three-container").appendChild(renderer.domElement);
 
-// ============================================
-//         CONTROLS (Mouse look around)
-// ============================================
-
+// Controls
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = CONFIG.controls.dampingFactor;
 controls.target.set(...CONFIG.controls.target);
 
-// ============================================
-//              RAYCASTING SETUP
-// ============================================
-
+// Raycasting
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
-let isHoveringMonitor = false;
+let isHoveringPowerButton = false;
 
-// ============================================
-//          CANVAS TEXTURE FOR SCREEN
-// ============================================
-
+// Canvas texture
 const canvas = document.createElement("canvas");
 canvas.width = CONFIG.canvas.width;
 canvas.height = CONFIG.canvas.height;
 const ctx = canvas.getContext("2d", { willReadFrequently: true });
-
 if (!ctx) console.error("Failed to get 2D context");
 
 const canvasTexture = new THREE.CanvasTexture(canvas);
 canvasTexture.minFilter = THREE.LinearFilter;
 canvasTexture.magFilter = THREE.LinearFilter;
 
-// ============================================
-//           TERMINAL ANIMATION STATE
-// ============================================
-
+// Terminal state
 let terminalTime = 0;
+let terminalLines = CONFIG.terminal.bootLines;
+let userInput = "";
+let terminalMode = "boot";
 
 function computeLineStartTimes(lines, typingSpeed, linePause) {
   const times = [];
@@ -130,63 +111,60 @@ function computeLineStartTimes(lines, typingSpeed, linePause) {
   return { lineStartTimes: times, allTypedTime: t - linePause };
 }
 
-const { lineStartTimes, allTypedTime } = computeLineStartTimes(
-  CONFIG.terminal.lines,
+let lineData = computeLineStartTimes(
+  terminalLines,
   CONFIG.terminal.typingSpeed,
   CONFIG.terminal.linePause,
 );
 
-// ============================================
-//           TERMINAL CANVAS DRAW
-// ============================================
-
+// Canvas draw function
 function updateTerminalCanvas() {
   if (!ctx) return;
-
   const { width, height } = canvas;
   const t = CONFIG.terminal;
 
-  // clear
   ctx.fillStyle = "#000000";
   ctx.fillRect(0, 0, width, height);
-
-  // phosphor glow + text
   ctx.shadowColor = t.color;
   ctx.shadowBlur = t.glowBlur;
   ctx.fillStyle = t.color;
   ctx.font = t.font;
 
   let y = t.startY;
-
-  for (let i = 0; i < CONFIG.terminal.lines.length; i++) {
-    if (terminalTime < lineStartTimes[i]) break;
-    const elapsed = terminalTime - lineStartTimes[i];
+  for (let i = 0; i < terminalLines.length; i++) {
+    if (terminalTime < lineData.lineStartTimes[i]) break;
+    const elapsed = terminalTime - lineData.lineStartTimes[i];
     const chars = Math.min(
       Math.floor(elapsed * t.typingSpeed),
-      CONFIG.terminal.lines[i].length,
+      terminalLines[i].length,
     );
-    ctx.fillText(CONFIG.terminal.lines[i].substring(0, chars), t.startX, y);
+    let displayText = terminalLines[i].substring(0, chars);
+    if (terminalMode === "prompt" && i === terminalLines.length - 1) {
+      displayText = terminalLines[i].replace("_", userInput);
+    }
+    ctx.fillText(displayText, t.startX, y);
     y += t.lineHeight;
-    if (chars < CONFIG.terminal.lines[i].length) break;
+    if (chars < terminalLines[i].length) break;
   }
 
-  // cursor — only after all lines are fully typed
-  if (terminalTime >= allTypedTime && Math.floor(terminalTime * 2) % 2 === 0) {
+  if (terminalMode === "prompt" && Math.floor(terminalTime * 2) % 2 === 0) {
     ctx.shadowBlur = 0;
     ctx.fillStyle = t.color;
-    ctx.fillRect(t.startX, y - 5, t.cursorWidth, t.cursorHeight);
+    const cursorX =
+      t.startX +
+      ctx.measureText(
+        terminalLines[terminalLines.length - 1].replace("_", userInput),
+      ).width;
+    ctx.fillRect(cursorX, y - t.lineHeight + 10, t.cursorWidth, t.cursorHeight);
   }
 
   ctx.shadowBlur = 0;
-
-  // scanlines
   const { gap, thickness, opacity } = CONFIG.scanlines;
   ctx.fillStyle = `rgba(0, 0, 0, ${opacity})`;
   for (let scanY = 0; scanY < height; scanY += gap) {
     ctx.fillRect(0, scanY, width, thickness);
   }
 
-  // static noise
   const { count, maxOpacity } = CONFIG.noise;
   for (let n = 0; n < count; n++) {
     const nx = Math.random() * width;
@@ -195,7 +173,6 @@ function updateTerminalCanvas() {
     ctx.fillRect(nx, ny, 1, 1);
   }
 
-  // vignette
   const { innerRadius, outerRadius, opacity: vOpacity } = CONFIG.vignette;
   const vignette = ctx.createRadialGradient(
     width / 2,
@@ -213,10 +190,7 @@ function updateTerminalCanvas() {
   canvasTexture.needsUpdate = true;
 }
 
-// ============================================
-//                 LIGHTING
-// ============================================
-
+// Lighting
 const ambientLight = new THREE.AmbientLight(
   CONFIG.lighting.ambient.color,
   CONFIG.lighting.ambient.intensity,
@@ -242,20 +216,15 @@ const bulb = new THREE.Mesh(bulbGeometry, bulbMaterial);
 bulb.position.copy(bulbLight.position);
 scene.add(bulb);
 
-// ============================================
-//              MODEL LOADING
-// ============================================
-
+// Model loading
 let monitorModel = null;
 let screenMaterial = null;
+let powerButton = null;
+let isPoweredOn = false;
+let powerOnTime = -1;
 
 const loader = new GLTFLoader();
 
-/**
- * Load a GLB model and add it to the scene.
- * @param {{ path: string, position: number[], scale: number[]|null }} modelConfig
- * @param {(gltf: object) => void} [onLoaded] - optional callback after load
- */
 function loadModel(modelConfig, onLoaded) {
   loader.load(
     modelConfig.path,
@@ -264,84 +233,135 @@ function loadModel(modelConfig, onLoaded) {
       model.position.set(...modelConfig.position);
       if (modelConfig.scale) model.scale.set(...modelConfig.scale);
       scene.add(model);
-      console.log(`Loaded: ${modelConfig.path}`);
+      console.log(`✅ Loaded: ${modelConfig.path}`);
       onLoaded?.(model);
     },
     undefined,
-    (error) => console.error(`Error loading ${modelConfig.path}:`, error),
+    (error) => console.error(`❌ Error loading ${modelConfig.path}:`, error),
   );
 }
 
-// load all models from config
 for (const modelConfig of CONFIG.models) {
   const isMonitor = modelConfig.path.includes("monitor");
-
   loadModel(modelConfig, (model) => {
     if (!isMonitor) return;
-
     monitorModel = model;
-
     model.traverse((child) => {
       if (!child.isMesh) return;
-      console.log("Mesh name:", child.name);
       if (child.name === CONFIG.screen.meshName) {
+        console.log("🖥️ Found screen mesh!");
         screenMaterial = new THREE.MeshStandardMaterial({
           map: canvasTexture,
           emissiveMap: canvasTexture,
           emissive: new THREE.Color(CONFIG.screen.emissiveColor),
-          emissiveIntensity: CONFIG.screen.emissiveBase,
+          emissiveIntensity: 0,
         });
         child.material = screenMaterial;
+      }
+      if (CONFIG.powerButton.possibleMeshNames.includes(child.name)) {
+        powerButton = child;
+        console.log(`🔘 Found power button: ${child.name}`);
       }
     });
   });
 }
 
-// ============================================
-//              MOUSE INTERACTION
-// ============================================
+function powerOn() {
+  if (isPoweredOn) return;
+  isPoweredOn = true;
+  powerOnTime = 0;
+  terminalTime = 0;
+  terminalMode = "boot";
+  console.log("⚡ POWERING ON...");
+}
 
+// Keyboard input
+window.addEventListener("keydown", (event) => {
+  if (terminalMode !== "prompt") return;
+  if (event.key === "Enter") {
+    const command = userInput.trim().toLowerCase();
+    console.log("💬 Command entered:", command);
+    if (command === "begin" || command === "start") {
+      console.log("🚀 Starting transition to cosmic space!");
+      terminalMode = "transition";
+    }
+    userInput = "";
+  } else if (event.key === "Backspace") {
+    userInput = userInput.slice(0, -1);
+  } else if (event.key.length === 1 && userInput.length < 20) {
+    userInput += event.key;
+  }
+});
+
+// Mouse interaction
 window.addEventListener("mousemove", (event) => {
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 });
 
 window.addEventListener("click", () => {
-  if (isHoveringMonitor) {
-    console.log("Monitor clicked");
-    // TODO: trigger interaction
+  if (!monitorModel) return;
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObject(monitorModel, true);
+  if (intersects.length > 0) {
+    const clickedMesh = intersects[0].object;
+    if (clickedMesh === powerButton && !isPoweredOn) {
+      console.log("🔘 Power button clicked!");
+      powerOn();
+    }
   }
 });
 
-// ============================================
-//              ANIMATION LOOP
-// ============================================
-
+// Animation loop
 function animate(timestamp) {
   requestAnimationFrame(animate);
   controls.update();
 
-  terminalTime = timestamp / 1000;
+  if (isPoweredOn && powerOnTime >= 0) {
+    powerOnTime += 0.016;
+    const { warmupDuration, flashDuration, flashIntensity } = CONFIG.powerOn;
 
-  updateTerminalCanvas();
-
-  // screen flicker
-  if (screenMaterial) {
-    screenMaterial.emissiveIntensity =
-      CONFIG.screen.emissiveBase +
-      Math.random() * CONFIG.screen.emissiveVariance;
+    if (powerOnTime < warmupDuration) {
+      const warmup = powerOnTime / warmupDuration;
+      if (screenMaterial) {
+        screenMaterial.emissiveIntensity = warmup * CONFIG.screen.emissiveBase;
+      }
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      canvasTexture.needsUpdate = true;
+    } else if (powerOnTime < warmupDuration + flashDuration) {
+      if (screenMaterial) {
+        screenMaterial.emissiveIntensity = flashIntensity;
+      }
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      canvasTexture.needsUpdate = true;
+    } else {
+      terminalTime = powerOnTime - warmupDuration - flashDuration;
+      if (terminalTime >= lineData.allTypedTime && terminalMode === "boot") {
+        terminalMode = "prompt";
+        console.log("⌨️ Terminal ready! Type 'BEGIN' or 'START'");
+      }
+      updateTerminalCanvas();
+      if (screenMaterial) {
+        screenMaterial.emissiveIntensity =
+          CONFIG.screen.emissiveBase +
+          Math.random() * CONFIG.screen.emissiveVariance;
+      }
+    }
   }
 
-  // hover detection
-  if (monitorModel) {
+  if (monitorModel && powerButton && !isPoweredOn) {
     raycaster.setFromCamera(mouse, camera);
     const intersects = raycaster.intersectObject(monitorModel, true);
-
-    if (intersects.length > 0 && !isHoveringMonitor) {
-      isHoveringMonitor = true;
+    const hoveringButton =
+      intersects.length > 0 && intersects[0].object === powerButton;
+    if (hoveringButton && !isHoveringPowerButton) {
+      isHoveringPowerButton = true;
       document.body.style.cursor = "pointer";
-    } else if (intersects.length === 0 && isHoveringMonitor) {
-      isHoveringMonitor = false;
+      console.log("👆 Hovering over power button");
+    } else if (!hoveringButton && isHoveringPowerButton) {
+      isHoveringPowerButton = false;
       document.body.style.cursor = "default";
     }
   }
@@ -351,10 +371,7 @@ function animate(timestamp) {
 
 animate();
 
-// ============================================
-//              WINDOW RESIZE
-// ============================================
-
+// Window resize
 window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
