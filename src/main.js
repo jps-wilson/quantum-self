@@ -35,8 +35,11 @@ const CONFIG = {
     emissiveBase: 0.28,
     emissiveVariance: 0.06,
   },
+  // ADJUSTABLE POWER BUTTON POSITION
   powerButton: {
-    possibleMeshNames: ["Plane008_Material002_0", "Plane010_Material002_0"],
+    position: [-0.3, 0.5, 1],
+    size: 0.125,
+    visible: false, // invisible but clickable
   },
   powerOn: { warmupDuration: 0.5, flashDuration: 0.1, flashIntensity: 2.0 },
   models: [
@@ -233,11 +236,11 @@ function loadModel(modelConfig, onLoaded) {
       model.position.set(...modelConfig.position);
       if (modelConfig.scale) model.scale.set(...modelConfig.scale);
       scene.add(model);
-      console.log(`✅ Loaded: ${modelConfig.path}`);
+      console.log(`Loaded: ${modelConfig.path}`);
       onLoaded?.(model);
     },
     undefined,
-    (error) => console.error(`❌ Error loading ${modelConfig.path}:`, error),
+    (error) => console.error(`Error loading ${modelConfig.path}:`, error),
   );
 }
 
@@ -246,10 +249,12 @@ for (const modelConfig of CONFIG.models) {
   loadModel(modelConfig, (model) => {
     if (!isMonitor) return;
     monitorModel = model;
+
     model.traverse((child) => {
       if (!child.isMesh) return;
+
       if (child.name === CONFIG.screen.meshName) {
-        console.log("🖥️ Found screen mesh!");
+        console.log("Found screen mesh!");
         screenMaterial = new THREE.MeshStandardMaterial({
           map: canvasTexture,
           emissiveMap: canvasTexture,
@@ -258,11 +263,23 @@ for (const modelConfig of CONFIG.models) {
         });
         child.material = screenMaterial;
       }
-      if (CONFIG.powerButton.possibleMeshNames.includes(child.name)) {
-        powerButton = child;
-        console.log(`🔘 Found power button: ${child.name}`);
-      }
     });
+
+    // makes invisible clickable hotspot
+    const buttonGeometry = new THREE.BoxGeometry(
+      CONFIG.powerButton.size,
+      CONFIG.powerButton.size,
+      CONFIG.powerButton.size,
+    );
+    const buttonMaterial = new THREE.MeshBasicMaterial({
+      visible: CONFIG.powerButton.visible,
+    });
+    powerButton = new THREE.Mesh(buttonGeometry, buttonMaterial);
+    powerButton.position.set(...CONFIG.powerButton.position);
+    powerButton.name = "PowerButton";
+
+    model.add(powerButton);
+    console.log("Power button hitbox created");
   });
 }
 
@@ -273,6 +290,8 @@ function powerOn() {
   terminalTime = 0;
   terminalMode = "boot";
   console.log("⚡ POWERING ON...");
+
+  // TODO: play click sound here
 }
 
 // Keyboard input
@@ -280,9 +299,9 @@ window.addEventListener("keydown", (event) => {
   if (terminalMode !== "prompt") return;
   if (event.key === "Enter") {
     const command = userInput.trim().toLowerCase();
-    console.log("💬 Command entered:", command);
+    console.log("Command entered:", command);
     if (command === "begin" || command === "start") {
-      console.log("🚀 Starting transition to cosmic space!");
+      console.log("Starting transition to cosmic space!");
       terminalMode = "transition";
     }
     userInput = "";
@@ -306,7 +325,7 @@ window.addEventListener("click", () => {
   if (intersects.length > 0) {
     const clickedMesh = intersects[0].object;
     if (clickedMesh === powerButton && !isPoweredOn) {
-      console.log("🔘 Power button clicked!");
+      console.log("Power button clicked!");
       powerOn();
     }
   }
