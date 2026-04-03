@@ -13,7 +13,7 @@ export class SceneManager {
     this.controls = controls;
 
     this.currentScene = null;
-    this.isTransitioning == false;
+    this.isTransitioning = false;
   }
 
   // setting active scene
@@ -21,7 +21,7 @@ export class SceneManager {
     if (this.currentScene) {
       this.currentScene.exit();
     }
-    this.currentScene.sceneInstance;
+    this.currentScene = sceneInstance;
     this.currentScene.enter();
   }
 
@@ -49,6 +49,6 @@ export class SceneManager {
 
   // render current scene
   render() {
-    this.render.render(this.scene, this.camera);
+    this.renderer.render(this.scene, this.camera);
   }
 }

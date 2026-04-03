@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
 import { SCENE_CONFIG } from "./config/constants.js";
 import { DeskScene } from "./scenes/DeskScene.js";
-import { SceneManager, SceneManager } from "./scenes/SceneManager.js";
+import { SceneManager } from "./scenes/SceneManager.js";
 import { Terminal } from "./terminal/Terminal.js";
 
 // CORE SETUP
@@ -59,7 +59,7 @@ scene.add(bulb);
 function onTransitionStart() {
   console.log("Starting black hole transition...");
   // TODO: implement black hole transition
-  Terminal.fadeOut(1000);
+  terminal.fadeOut(1000);
 }
 
 const terminal = new Terminal(onTransitionStart);
