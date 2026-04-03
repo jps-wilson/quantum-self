@@ -5,26 +5,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Quantum Self</title>
-    <style>
-        html,
-        body,
-        canvas {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            font-size: 0;
-        }
-
-        html {
-            background-color: black;
-        }
-    </style>
+    <link rel="stylesheet" href="/src/style.css">
 </head>
 
 <body>
     <div id="three-container"></div>
-    <div id="terminal"></div>
+
+    <div id="terminal">
+        <div class="crt-screen">
+            <div id="terminal-output"></div>
+            <div id="terminal-input-row">
+                <span id="input-prompt"></span><span id="input-display"></span><span class="cursor"></span>
+            </div>
+        </div>
+    </div>
+
     <script type="module" src="/src/main.js"></script>
 </body>
 

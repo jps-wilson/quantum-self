@@ -9,57 +9,77 @@ const CONFIG = {
   camera: { fov: 75, near: 0.1, far: 1000, position: [0, 1.5, 3] },
   controls: { dampingFactor: 0.05, target: [0, 1, 0] },
   canvas: { width: 512, height: 384 },
-  terminal: {
-    bootLines: [
-      "QUANTUM BIOS v2.4.1",
-      "Initializing...",
-      "Loading kernel...",
-      "System ready.",
-      "",
-      "quantum@self:~$ _",
-    ],
-    typingSpeed: 20,
-    linePause: 0.5,
-    font: "20px monospace",
-    color: "#00ff41",
-    glowBlur: 8,
-    lineHeight: 30,
-    startX: 20,
-    startY: 40,
-    cursorWidth: 10,
-    cursorHeight: 20,
-  },
   screen: {
     meshName: "Plane009_screen3_0",
     emissiveColor: 0x00ff41,
-    emissiveBase: 0.28,
-    emissiveVariance: 0.06,
+    emissiveBase: 0.4,
+    emissiveVariance: 0.08,
   },
-  // ADJUSTABLE POWER BUTTON POSITION
-  powerButton: {
-    position: [-0.3, 0.5, 1],
-    size: 0.125,
-    visible: false, // invisible but clickable
-  },
-  powerOn: { warmupDuration: 0.5, flashDuration: 0.1, flashIntensity: 2.0 },
   models: [
-    { path: "/models/desk.glb", position: [0, 0, 0], scale: null },
-    {
-      path: "/models/monitor.glb",
-      position: [0, 0.55, 0],
-      scale: [0.13, 0.13, 0.13],
-    },
+    { path: "/models/desk.glb",    position: [0, 0,    0], scale: null               },
+    { path: "/models/monitor.glb", position: [0, 0.55, 0], scale: [0.13, 0.13, 0.13] },
   ],
   lighting: {
     ambient: { color: 0x404040, intensity: 1.5 },
-    bulb: { color: 0xffa500, intensity: 3, distance: 50, position: [0, 3, 0] },
+    bulb:    { color: 0xffa500, intensity: 3, distance: 50, position: [0, 3, 0] },
   },
   scanlines: { gap: 4, thickness: 2, opacity: 0.25 },
-  noise: { count: 30, maxOpacity: 0.15 },
-  vignette: { innerRadius: 0.25, outerRadius: 0.75, opacity: 0.8 },
+  noise:     { count: 20, maxOpacity: 0.12 },
+  vignette:  { innerRadius: 0.25, outerRadius: 0.75, opacity: 0.8 },
 };
 
-// Scene setup
+// ============================================
+//             TERMINAL CONTENT
+// ============================================
+const BOOT_MESSAGES = [
+  { text: "QUANTUM BIOS v2.4.1 (C) 1985 QuantumSoft Inc.", delay: 0,    color: "white" },
+  { text: "Base Memory: 640K   Extended: 15360K",          delay: 100,  color: "white" },
+  { text: "Disk 0: 20MB ST-225 HDD [OK]",                  delay: 150,  color: "white" },
+  { text: "",                                               delay: 200,  color: "white" },
+  { text: "Loading QUANTUM/UNIX Kernel v3.2...",            delay: 250,  color: "amber" },
+  { text: "",                                               delay: 400,  color: "white" },
+  { text: "unix: (ttyd0) multi-user",                       delay: 450,  color: "white" },
+  { text: "mem = 15728K (0x0f60000)",                       delay: 500,  color: "white" },
+  { text: "avail mem = 14336K",                             delay: 550,  color: "white" },
+  { text: "using 147 buffers containing 1176K memory",      delay: 600,  color: "white" },
+  { text: 'wd0: ST-225 <20MB 5.25" FH ESDI>',              delay: 650,  color: "white" },
+  { text: "wd0a: 19MB, 615 cyl, 4 heads, 17 sec",          delay: 700,  color: "white" },
+  { text: "",                                               delay: 750,  color: "white" },
+  { text: "Checking filesystems...",                        delay: 800,  color: "white" },
+  { text: "/dev/wd0a: clean, 1847 files",                   delay: 900,  color: "white" },
+  { text: "Mounting local filesystems...",                  delay: 1000, color: "white" },
+  { text: "Starting daemons: update cron inetd lpd",        delay: 1100, color: "white" },
+  { text: "",                                               delay: 1150, color: "white" },
+  { text: "Init network: qe0",                              delay: 1200, color: "white" },
+  { text: "qe0: address 08:00:2b:3c:4d:5e",                delay: 1250, color: "white" },
+  { text: "Starting network daemons: routed named",         delay: 1300, color: "white" },
+  { text: "",                                               delay: 1350, color: "white" },
+  { text: "Quantum Multi-User System ready.",               delay: 1400, color: "amber" },
+  { text: "",                                               delay: 1450, color: "white" },
+];
+
+const QUANTUM_LOGO = `   ██████╗ ██╗   ██╗ █████╗ ███╗   ██╗████████╗██╗   ██╗███╗   ███╗
+  ██╔═══██╗██║   ██║██╔══██╗████╗  ██║╚══██╔══╝██║   ██║████╗ ████║
+  ██║   ██║██║   ██║███████║██╔██╗ ██║   ██║   ██║   ██║██╔████╔██║
+  ██║▄▄ ██║██║   ██║██╔══██║██║╚██╗██║   ██║   ██║   ██║██║╚██╔╝██║
+  ╚██████╔╝╚██████╔╝██║  ██║██║ ╚████║   ██║   ╚██████╔╝██║ ╚═╝ ██║
+   ╚══▀▀═╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═══╝   ╚═╝    ╚═════╝ ╚═╝     ╚═╝`;
+
+const WELCOME_MESSAGES = [
+  { text: "",                                          color: "white" },
+  { text: "Initializing user profile...",              color: "amber" },
+  { text: "Creating session token...",                 color: "white" },
+  { text: "",                                          color: "white" },
+  { text: "Last login: Mon Apr 15 09:42:13 1985",      color: "white" },
+  { text: "",                                          color: "white" },
+  { text: "WELCOME TO THE QUANTUM SELF",               color: "amber" },
+  { text: "Explore identity across infinite realities", color: "white" },
+  { text: "",                                          color: "white" },
+];
+
+// ============================================
+//              SCENE SETUP
+// ============================================
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x000000);
 
@@ -76,124 +96,91 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 document.getElementById("three-container").appendChild(renderer.domElement);
 
-// Controls
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = CONFIG.controls.dampingFactor;
 controls.target.set(...CONFIG.controls.target);
 
-// Raycasting
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
-let isHoveringPowerButton = false;
+let isHoveringMonitor = false;
 
-// Canvas texture
+// ============================================
+//       CANVAS TEXTURE — idle QUANTUM screen
+// ============================================
 const canvas = document.createElement("canvas");
 canvas.width = CONFIG.canvas.width;
 canvas.height = CONFIG.canvas.height;
-const ctx = canvas.getContext("2d", { willReadFrequently: true });
+const ctx = canvas.getContext("2d");
 if (!ctx) console.error("Failed to get 2D context");
 
 const canvasTexture = new THREE.CanvasTexture(canvas);
 canvasTexture.minFilter = THREE.LinearFilter;
 canvasTexture.magFilter = THREE.LinearFilter;
 
-// Terminal state
-let terminalTime = 0;
-let terminalLines = CONFIG.terminal.bootLines;
-let userInput = "";
-let terminalMode = "boot";
-
-function computeLineStartTimes(lines, typingSpeed, linePause) {
-  const times = [];
-  let t = 0;
-  for (const line of lines) {
-    times.push(t);
-    t += line.length / typingSpeed + linePause;
-  }
-  return { lineStartTimes: times, allTypedTime: t - linePause };
-}
-
-let lineData = computeLineStartTimes(
-  terminalLines,
-  CONFIG.terminal.typingSpeed,
-  CONFIG.terminal.linePause,
-);
-
-// Canvas draw function
-function updateTerminalCanvas() {
+function drawQuantumScreen(time) {
   if (!ctx) return;
   const { width, height } = canvas;
-  const t = CONFIG.terminal;
 
-  ctx.fillStyle = "#000000";
+  ctx.fillStyle = "#000";
   ctx.fillRect(0, 0, width, height);
-  ctx.shadowColor = t.color;
-  ctx.shadowBlur = t.glowBlur;
-  ctx.fillStyle = t.color;
-  ctx.font = t.font;
 
-  let y = t.startY;
-  for (let i = 0; i < terminalLines.length; i++) {
-    if (terminalTime < lineData.lineStartTimes[i]) break;
-    const elapsed = terminalTime - lineData.lineStartTimes[i];
-    const chars = Math.min(
-      Math.floor(elapsed * t.typingSpeed),
-      terminalLines[i].length,
-    );
-    let displayText = terminalLines[i].substring(0, chars);
-    if (terminalMode === "prompt" && i === terminalLines.length - 1) {
-      displayText = terminalLines[i].replace("_", userInput);
-    }
-    ctx.fillText(displayText, t.startX, y);
-    y += t.lineHeight;
-    if (chars < terminalLines[i].length) break;
-  }
+  const pulse = Math.sin(time * 1.8) * 0.4 + 0.6;
 
-  if (terminalMode === "prompt" && Math.floor(terminalTime * 2) % 2 === 0) {
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = t.color;
-    const cursorX =
-      t.startX +
-      ctx.measureText(
-        terminalLines[terminalLines.length - 1].replace("_", userInput),
-      ).width;
-    ctx.fillRect(cursorX, y - t.lineHeight + 10, t.cursorWidth, t.cursorHeight);
-  }
+  // QUANTUM
+  ctx.textAlign = "center";
+  ctx.shadowColor = "#00ff41";
+  ctx.shadowBlur = 18 * pulse;
+  ctx.fillStyle = "#00ff41";
+  ctx.font = "bold 52px monospace";
+  ctx.fillText("QUANTUM", width / 2, height / 2 - 16);
 
+  // SELF
+  ctx.shadowColor = "#ffa657";
+  ctx.shadowBlur = 12 * pulse;
+  ctx.fillStyle = "#ffa657";
+  ctx.font = "bold 22px monospace";
+  ctx.fillText("S  E  L  F", width / 2, height / 2 + 22);
+
+  // click hint
+  const hintAlpha = Math.sin(time * 1.2) * 0.3 + 0.5;
   ctx.shadowBlur = 0;
-  const { gap, thickness, opacity } = CONFIG.scanlines;
-  ctx.fillStyle = `rgba(0, 0, 0, ${opacity})`;
-  for (let scanY = 0; scanY < height; scanY += gap) {
-    ctx.fillRect(0, scanY, width, thickness);
+  ctx.fillStyle = `rgba(201, 209, 217, ${hintAlpha})`;
+  ctx.font = "11px monospace";
+  ctx.fillText("[ click to enter ]", width / 2, height - 28);
+
+  ctx.textAlign = "left";
+  ctx.shadowBlur = 0;
+
+  // scanlines
+  ctx.fillStyle = `rgba(0, 0, 0, ${CONFIG.scanlines.opacity})`;
+  for (let scanY = 0; scanY < height; scanY += CONFIG.scanlines.gap) {
+    ctx.fillRect(0, scanY, width, CONFIG.scanlines.thickness);
   }
 
-  const { count, maxOpacity } = CONFIG.noise;
-  for (let n = 0; n < count; n++) {
-    const nx = Math.random() * width;
-    const ny = Math.random() * height;
-    ctx.fillStyle = `rgba(0, 255, 65, ${Math.random() * maxOpacity})`;
-    ctx.fillRect(nx, ny, 1, 1);
+  // noise
+  for (let n = 0; n < CONFIG.noise.count; n++) {
+    ctx.fillStyle = `rgba(0, 255, 65, ${Math.random() * CONFIG.noise.maxOpacity})`;
+    ctx.fillRect(Math.random() * width, Math.random() * height, 1, 1);
   }
 
-  const { innerRadius, outerRadius, opacity: vOpacity } = CONFIG.vignette;
+  // vignette
+  const { innerRadius, outerRadius, opacity } = CONFIG.vignette;
   const vignette = ctx.createRadialGradient(
-    width / 2,
-    height / 2,
-    height * innerRadius,
-    width / 2,
-    height / 2,
-    height * outerRadius,
+    width / 2, height / 2, height * innerRadius,
+    width / 2, height / 2, height * outerRadius,
   );
   vignette.addColorStop(0, "rgba(0,0,0,0)");
-  vignette.addColorStop(1, `rgba(0,0,0,${vOpacity})`);
+  vignette.addColorStop(1, `rgba(0,0,0,${opacity})`);
   ctx.fillStyle = vignette;
   ctx.fillRect(0, 0, width, height);
 
   canvasTexture.needsUpdate = true;
 }
 
-// Lighting
+// ============================================
+//                 LIGHTING
+// ============================================
 const ambientLight = new THREE.AmbientLight(
   CONFIG.lighting.ambient.color,
   CONFIG.lighting.ambient.intensity,
@@ -219,12 +206,11 @@ const bulb = new THREE.Mesh(bulbGeometry, bulbMaterial);
 bulb.position.copy(bulbLight.position);
 scene.add(bulb);
 
-// Model loading
+// ============================================
+//              MODEL LOADING
+// ============================================
 let monitorModel = null;
 let screenMaterial = null;
-let powerButton = null;
-let isPoweredOn = false;
-let powerOnTime = -1;
 
 const loader = new GLTFLoader();
 
@@ -236,7 +222,6 @@ function loadModel(modelConfig, onLoaded) {
       model.position.set(...modelConfig.position);
       if (modelConfig.scale) model.scale.set(...modelConfig.scale);
       scene.add(model);
-      console.log(`Loaded: ${modelConfig.path}`);
       onLoaded?.(model);
     },
     undefined,
@@ -249,138 +234,58 @@ for (const modelConfig of CONFIG.models) {
   loadModel(modelConfig, (model) => {
     if (!isMonitor) return;
     monitorModel = model;
-
     model.traverse((child) => {
       if (!child.isMesh) return;
-
+      console.log("Mesh name:", child.name);
       if (child.name === CONFIG.screen.meshName) {
-        console.log("Found screen mesh!");
         screenMaterial = new THREE.MeshStandardMaterial({
           map: canvasTexture,
           emissiveMap: canvasTexture,
           emissive: new THREE.Color(CONFIG.screen.emissiveColor),
-          emissiveIntensity: 0,
+          emissiveIntensity: CONFIG.screen.emissiveBase,
         });
         child.material = screenMaterial;
       }
     });
-
-    // makes invisible clickable hotspot
-    const buttonGeometry = new THREE.BoxGeometry(
-      CONFIG.powerButton.size,
-      CONFIG.powerButton.size,
-      CONFIG.powerButton.size,
-    );
-    const buttonMaterial = new THREE.MeshBasicMaterial({
-      visible: CONFIG.powerButton.visible,
-    });
-    powerButton = new THREE.Mesh(buttonGeometry, buttonMaterial);
-    powerButton.position.set(...CONFIG.powerButton.position);
-    powerButton.name = "PowerButton";
-
-    model.add(powerButton);
-    console.log("Power button hitbox created");
   });
 }
 
-function powerOn() {
-  if (isPoweredOn) return;
-  isPoweredOn = true;
-  powerOnTime = 0;
-  terminalTime = 0;
-  terminalMode = "boot";
-  console.log("⚡ POWERING ON...");
-
-  // TODO: play click sound here
-}
-
-// Keyboard input
-window.addEventListener("keydown", (event) => {
-  if (terminalMode !== "prompt") return;
-  if (event.key === "Enter") {
-    const command = userInput.trim().toLowerCase();
-    console.log("Command entered:", command);
-    if (command === "begin" || command === "start") {
-      console.log("Starting transition to cosmic space!");
-      terminalMode = "transition";
-    }
-    userInput = "";
-  } else if (event.key === "Backspace") {
-    userInput = userInput.slice(0, -1);
-  } else if (event.key.length === 1 && userInput.length < 20) {
-    userInput += event.key;
-  }
-});
-
-// Mouse interaction
+// ============================================
+//              MOUSE INTERACTION
+// ============================================
 window.addEventListener("mousemove", (event) => {
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 });
 
 window.addEventListener("click", () => {
-  if (!monitorModel) return;
-  raycaster.setFromCamera(mouse, camera);
-  const intersects = raycaster.intersectObject(monitorModel, true);
-  if (intersects.length > 0) {
-    const clickedMesh = intersects[0].object;
-    if (clickedMesh === powerButton && !isPoweredOn) {
-      console.log("Power button clicked!");
-      powerOn();
-    }
-  }
+  if (isHoveringMonitor) enterTerminal();
 });
 
-// Animation loop
+// ============================================
+//              ANIMATION LOOP
+// ============================================
 function animate(timestamp) {
   requestAnimationFrame(animate);
   controls.update();
 
-  if (isPoweredOn && powerOnTime >= 0) {
-    powerOnTime += 0.016;
-    const { warmupDuration, flashDuration, flashIntensity } = CONFIG.powerOn;
+  const time = timestamp / 1000;
+  drawQuantumScreen(time);
 
-    if (powerOnTime < warmupDuration) {
-      const warmup = powerOnTime / warmupDuration;
-      if (screenMaterial) {
-        screenMaterial.emissiveIntensity = warmup * CONFIG.screen.emissiveBase;
-      }
-      ctx.fillStyle = "#000000";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      canvasTexture.needsUpdate = true;
-    } else if (powerOnTime < warmupDuration + flashDuration) {
-      if (screenMaterial) {
-        screenMaterial.emissiveIntensity = flashIntensity;
-      }
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      canvasTexture.needsUpdate = true;
-    } else {
-      terminalTime = powerOnTime - warmupDuration - flashDuration;
-      if (terminalTime >= lineData.allTypedTime && terminalMode === "boot") {
-        terminalMode = "prompt";
-        console.log("⌨️ Terminal ready! Type 'BEGIN' or 'START'");
-      }
-      updateTerminalCanvas();
-      if (screenMaterial) {
-        screenMaterial.emissiveIntensity =
-          CONFIG.screen.emissiveBase +
-          Math.random() * CONFIG.screen.emissiveVariance;
-      }
-    }
+  if (screenMaterial) {
+    screenMaterial.emissiveIntensity =
+      CONFIG.screen.emissiveBase + Math.random() * CONFIG.screen.emissiveVariance;
   }
 
-  if (monitorModel && powerButton && !isPoweredOn) {
+  if (monitorModel) {
     raycaster.setFromCamera(mouse, camera);
     const intersects = raycaster.intersectObject(monitorModel, true);
-    const hoveringButton =
-      intersects.length > 0 && intersects[0].object === powerButton;
-    if (hoveringButton && !isHoveringPowerButton) {
-      isHoveringPowerButton = true;
+
+    if (intersects.length > 0 && !isHoveringMonitor) {
+      isHoveringMonitor = true;
       document.body.style.cursor = "pointer";
-      console.log("👆 Hovering over power button");
-    } else if (!hoveringButton && isHoveringPowerButton) {
-      isHoveringPowerButton = false;
+    } else if (intersects.length === 0 && isHoveringMonitor) {
+      isHoveringMonitor = false;
       document.body.style.cursor = "default";
     }
   }
@@ -390,9 +295,145 @@ function animate(timestamp) {
 
 animate();
 
-// Window resize
 window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
+
+// ============================================
+//              HTML TERMINAL
+// ============================================
+const terminalEl   = document.getElementById("terminal");
+const outputEl     = document.getElementById("terminal-output");
+const promptEl     = document.getElementById("input-prompt");
+const inputDisplayEl = document.getElementById("input-display");
+const inputRowEl   = document.getElementById("terminal-input-row");
+
+let terminalPhase = null; // null | "boot" | "login" | "password" | "prompt" | "transition"
+let userInput = "";
+let username = "";
+
+function addLine(text, color = "white") {
+  const line = document.createElement("div");
+  line.className = `terminal-line ${color}`;
+  line.textContent = text;
+  outputEl.appendChild(line);
+  outputEl.scrollTop = outputEl.scrollHeight;
+}
+
+function setPrompt(text) {
+  promptEl.textContent = text;
+  userInput = "";
+  inputDisplayEl.textContent = "";
+}
+
+function showInput() { inputRowEl.style.visibility = "visible"; }
+function hideInput() { inputRowEl.style.visibility = "hidden"; }
+
+function enterTerminal() {
+  controls.enabled = false;
+  document.body.style.cursor = "default";
+  isHoveringMonitor = false;
+
+  terminalEl.classList.add("entering");
+  terminalEl.addEventListener("animationend", () => {
+    terminalEl.classList.remove("entering");
+    terminalEl.classList.add("active");
+    startBoot();
+  }, { once: true });
+}
+
+function startBoot() {
+  terminalPhase = "boot";
+  hideInput();
+
+  const lastDelay = BOOT_MESSAGES[BOOT_MESSAGES.length - 1].delay;
+
+  for (const msg of BOOT_MESSAGES) {
+    setTimeout(() => addLine(msg.text, msg.color), msg.delay);
+  }
+
+  // logo
+  setTimeout(() => {
+    QUANTUM_LOGO.split("\n").forEach((line) => addLine(line, "green"));
+  }, lastDelay + 300);
+
+  // welcome messages
+  setTimeout(() => {
+    for (const msg of WELCOME_MESSAGES) addLine(msg.text, msg.color);
+  }, lastDelay + 800);
+
+  // login prompt
+  setTimeout(() => {
+    setPrompt("quantum login: ");
+    showInput();
+    terminalPhase = "login";
+  }, lastDelay + 1200);
+}
+
+// ============================================
+//              KEYBOARD INPUT
+// ============================================
+window.addEventListener("keydown", (event) => {
+  if (!terminalPhase || terminalPhase === "boot" || terminalPhase === "transition") return;
+
+  if (event.key === "Enter") {
+    handleEnter();
+  } else if (event.key === "Backspace") {
+    userInput = userInput.slice(0, -1);
+    refreshInputDisplay();
+  } else if (event.key.length === 1 && userInput.length < 40) {
+    userInput += event.key;
+    refreshInputDisplay();
+  }
+});
+
+function refreshInputDisplay() {
+  inputDisplayEl.textContent =
+    terminalPhase === "password" ? "*".repeat(userInput.length) : userInput;
+}
+
+function handleEnter() {
+  if (terminalPhase === "login") {
+    if (userInput.length === 0) return;
+    username = userInput;
+    addLine(`quantum login: ${username}`, "green");
+    setPrompt("Password: ");
+    terminalPhase = "password";
+
+  } else if (terminalPhase === "password") {
+    addLine(`Password: ${"*".repeat(userInput.length)}`, "green");
+    addLine("", "white");
+    addLine(`Welcome, ${username}!`, "amber");
+    addLine("", "white");
+    addLine("Type 'start' to begin your journey...", "white");
+    addLine("", "white");
+    setPrompt("quantum@self:~$ ");
+    terminalPhase = "prompt";
+
+  } else if (terminalPhase === "prompt") {
+    const command = userInput.trim().toLowerCase();
+    addLine(`quantum@self:~$ ${userInput}`, "green");
+    userInput = "";
+    inputDisplayEl.textContent = "";
+
+    if (command === "start" || command === "begin") {
+      addLine("", "white");
+      addLine("Initializing quantum engine...", "amber");
+      addLine("Loading multiverse...", "white");
+      addLine("Calibrating reality branches...", "white");
+      addLine("", "white");
+      addLine("Entering the void...", "amber");
+      hideInput();
+      terminalPhase = "transition";
+      // TODO: trigger transition to 3D space
+    } else if (command === "") {
+      // empty enter — just show new prompt
+    } else {
+      addLine(`bash: ${command}: command not found`, "white");
+    }
+
+    if (terminalPhase === "prompt") setPrompt("quantum@self:~$ ");
+  }
+}
