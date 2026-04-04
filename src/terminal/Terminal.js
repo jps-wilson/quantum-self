@@ -76,6 +76,11 @@ export class Terminal {
     this.terminalEl.style.opacity = "0";
   }
 
+  // fully removes terminal from view after fade
+  hide() {
+    this.terminalEl.style.display = "none";
+  }
+
   // PRIVATE METHODS
   _addLine(text, color = "white") {
     const line = document.createElement("div");

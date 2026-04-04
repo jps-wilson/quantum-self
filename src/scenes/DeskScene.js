@@ -35,6 +35,7 @@ export class DeskScene {
       MODELS.desk.position,
       MODELS.desk.scale,
     );
+    desk.userData.isDesk = true;
     this.scene.add(desk);
 
     // load monitor
@@ -43,6 +44,7 @@ export class DeskScene {
       MODELS.monitor.position,
       MODELS.monitor.scale,
     );
+    this.monitorModel.userData.isMonitor = true;
     this.scene.add(this.monitorModel);
 
     // find screen mesh + apply canvas
@@ -66,7 +68,11 @@ export class DeskScene {
 
   // called when scene becomes inactive
   exit() {
-    // cleanup if needed
+    this.scene.traverse((obj) => {
+      if (obj.userData.isDesk || obj.userData.isMonitor) {
+        obj.visible = false;
+      }
+    });
   }
 
   // update loop (called every frame)
@@ -175,13 +181,29 @@ export class DeskScene {
   }
 
   _setupMouseEvents() {
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let wasDrag = false;
+
+    window.addEventListener("pointerdown", (e) => {
+      dragStartX = e.clientX;
+      dragStartY = e.clientY;
+      wasDrag = false;
+    });
+
+    window.addEventListener("pointermove", (e) => {
+      const dx = e.clientX - dragStartX;
+      const dy = e.clientY - dragStartY;
+      if (dx * dx + dy * dy > 25) wasDrag = true; // 5 px threshold
+    });
+
     window.addEventListener("mousemove", (event) => {
       this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
       this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
     });
 
     window.addEventListener("click", () => {
-      if (this.isHoveringMonitor) {
+      if (!wasDrag && this.isHoveringMonitor) {
         this._enterTerminal();
       }
     });

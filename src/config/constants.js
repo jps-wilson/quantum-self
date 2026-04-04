@@ -11,8 +11,8 @@ export const SCENE_CONFIG = {
     target: [0, 1, 0],
   },
   lighting: {
-    ambient: { color: 0x404040, intensity: 1.5 },
-    bulb: { color: 0xffa500, intensity: 3, distance: 50, position: [0, 3, 0] },
+    ambient: { color: 0x8090a0, intensity: 2.5 },
+    bulb: { color: 0xfff5e0, intensity: 15, distance: 60, position: [0, 3, 0] },
   },
 };
 
@@ -45,7 +45,7 @@ export const MODELS = {
     scale: [0.13, 0.13, 0.13],
   },
   blackHole: {
-    path: "/models/black_hole.glb",
+    path: "/models/quantum_leap.glb",
     position: [0, 2, -5],
     scale: [0.1, 0.1, 0.1],
   },
@@ -54,11 +54,11 @@ export const MODELS = {
 // TRANSITION CONFIG
 export const TRANSITION_CONFIG = {
   blackHole: {
-    duration: 4.0, // transition duration (seconds)
-    spawnDistance: 8, // initial distance in front of camera
-    growthRate: 0.15, // how fast it grows
-    spinSpeed: 0.5, // rotation speed
-    pullStrength: 2.5, // camera pull force
+    duration: 5.0,       // total transition duration (seconds)
+    spawnDistance: 12,   // how far in front of camera it spawns
+    maxScale: 3.5,       // final model scale
+    spinSpeed: 1.2,      // rotation speed
+    pullStrength: 18,    // camera pull force (much stronger)
   },
   terminal: {
     fadeOutDuration: 1.0, // how long terminal fades

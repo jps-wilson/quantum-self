@@ -2,8 +2,8 @@ import * as THREE from "three";
 
 /**
  * Void Scene
- * The cosmic space after entering the black hole
- * Contains: starfield, nebula, decision points
+ * The space between dimensions.
+ * Contains: color-shifting void, dimensional grid, layered glowing particle field.
  */
 export class VoidScene {
   constructor(scene, camera, controls) {
@@ -11,108 +11,166 @@ export class VoidScene {
     this.camera = camera;
     this.controls = controls;
 
-    this.stars = null;
-    this.nebulaClouds = [];
+    this.particleLayers = [];
+    this.grid = null;
+    this.particleTexture = null;
+    this.originalBackground = null;
   }
 
-  /**
-   * Initialize the void scene
-   */
   async init() {
-    this._createStarfield();
-    this._createNebulaClouds();
-    this._positionCamera();
-
-    console.log("Void scene initialized");
+    // nothing to preload — objects are added when enter() is called
   }
 
   // called when scene becomes active
   enter() {
-    this.controls.enabled = true;
-    console.log("Entered the void");
+    this.originalBackground = this.scene.background;
+    this.scene.background = new THREE.Color(0x04001a);
+
+    this.particleTexture = this._createParticleTexture();
+    this._createDimensionalGrid();
+    this._createParticleField();
+    this._positionCamera();
+
+    console.log("Entered the dimensional void");
   }
 
   // called when scene becomes inactive
   exit() {
-    // cleanup if needed
+    this.scene.background = this.originalBackground;
+
+    this.particleLayers.forEach((p) => this.scene.remove(p));
+    if (this.grid) this.scene.remove(this.grid);
+    if (this.particleTexture) this.particleTexture.dispose();
+
+    this.particleLayers = [];
+    this.grid = null;
+    this.particleTexture = null;
   }
 
   // update loop (called every frame)
   update(time) {
-    // slowly rotate nebula clouds
-    this.nebulaClouds.forEach((cloud, i) => {
-      cloud.rotation.y = time * 0.05 * (i % 2 === 0 ? 1 : -1);
+    // slowly cycle background through deep dimensional hues
+    if (this.scene.background instanceof THREE.Color) {
+      this.scene.background.setHSL((time * 0.01) % 1, 1.0, 0.035);
+    }
+
+    // drift particle layers at different speeds (parallax)
+    this.particleLayers.forEach((layer, i) => {
+      layer.rotation.y = time * 0.008 * (i % 2 === 0 ? 1 : -1);
+      layer.rotation.x = time * 0.003 * (i % 2 === 0 ? -1 : 1);
+
+      const pos = layer.geometry.attributes.position.array;
+      const speed = 0.002 + i * 0.001;
+      for (let j = 1; j < pos.length; j += 3) {
+        pos[j] += Math.sin(time * 0.3 + j * 0.005) * speed;
+      }
+      layer.geometry.attributes.position.needsUpdate = true;
     });
+
+    // breathe the grid opacity
+    if (this.grid) {
+      this.grid.material.opacity = 0.2 + Math.sin(time * 0.35) * 0.08;
+    }
   }
 
   // PRIVATE METHODS
-  _createStarfield() {
-    const starGeometry = new THREE.BufferGeometry();
-    const starCount = 5000;
-    const positions = new Float32Array(starCount * 3);
 
-    for (let i = 0; i < starCount * 3; i += 3) {
-      // Random position in a sphere
-      const radius = 100 + Math.random() * 400;
-      const theta = Math.random() * Math.PI * 2;
-      const phi = Math.acos(Math.random() * 2 - 1);
+  // soft circular glow sprite — makes particles look like light orbs, not squares
+  _createParticleTexture() {
+    const size = 64;
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
 
-      positions[i] = radius * Math.sin(phi) * Math.cos(theta);
-      positions[i + 1] = radius * Math.sin(phi) * Math.sin(theta);
-      positions[i + 2] = radius * Math.cos(phi);
-    }
-
-    starGeometry.setAttribute(
-      "position",
-      new THREE.BufferAttribute(positions, 3),
+    const gradient = ctx.createRadialGradient(
+      size / 2, size / 2, 0,
+      size / 2, size / 2, size / 2,
     );
+    gradient.addColorStop(0.0, "rgba(255,255,255,1)");
+    gradient.addColorStop(0.2, "rgba(255,255,255,0.8)");
+    gradient.addColorStop(0.5, "rgba(255,255,255,0.2)");
+    gradient.addColorStop(1.0, "rgba(255,255,255,0)");
 
-    const starMaterial = new THREE.PointsMaterial({
-      color: 0xffffff,
-      size: 0.5,
-      transparent: true,
-      opacity: 0.8,
-    });
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, size, size);
 
-    this.stars = new THREE.Points(starGeometry, starMaterial);
-    this.scene.add(this.stars);
+    return new THREE.CanvasTexture(canvas);
   }
 
-  _createNebulaClouds() {
-    const nebulaColors = [
-      0x8b5cf6, // Purple
-      0xec4899, // Pink
-      0x3b82f6, // Blue
+  _createDimensionalGrid() {
+    this.grid = new THREE.GridHelper(400, 80, 0x4c1d95, 0x1e1b4b);
+    this.grid.position.y = -20;
+    this.grid.material.transparent = true;
+    this.grid.material.opacity = 0.25;
+    this.scene.add(this.grid);
+  }
+
+  _createParticleField() {
+    // layer config: { count, size, spread, ySpread, zOffset, opacity }
+    const layers = [
+      // dense fine layer — fills the void with ambient haze
+      { count: 6000, size: 0.6,  spread: 300, ySpread:  80, zOffset: -60, opacity: 0.55 },
+      // mid layer — larger, brighter, sparser
+      { count: 1200, size: 1.8,  spread: 200, ySpread:  60, zOffset: -40, opacity: 0.7  },
+      // bright highlights — rare large orbs
+      { count: 200,  size: 4.0,  spread: 150, ySpread:  40, zOffset: -30, opacity: 0.85 },
     ];
 
-    nebulaColors.forEach((color, i) => {
-      const geometry = new THREE.SphereGeometry(30, 32, 32);
-      const material = new THREE.MeshBasicMaterial({
-        color: color,
+    const palette = [
+      new THREE.Color(0x6d28d9), // deep violet
+      new THREE.Color(0x7c3aed), // violet
+      new THREE.Color(0x06b6d4), // cyan
+      new THREE.Color(0x0ea5e9), // sky blue
+      new THREE.Color(0xec4899), // pink
+      new THREE.Color(0xa855f7), // purple
+      new THREE.Color(0x22d3ee), // light cyan
+      new THREE.Color(0xf0abfc), // lilac
+      new THREE.Color(0x818cf8), // indigo
+    ];
+
+    for (const cfg of layers) {
+      const positions = new Float32Array(cfg.count * 3);
+      const colors    = new Float32Array(cfg.count * 3);
+
+      for (let i = 0; i < cfg.count; i++) {
+        positions[i * 3]     = (Math.random() - 0.5) * cfg.spread;
+        positions[i * 3 + 1] = (Math.random() - 0.5) * cfg.ySpread;
+        positions[i * 3 + 2] = (Math.random() - 0.5) * cfg.spread + cfg.zOffset;
+
+        const c = palette[Math.floor(Math.random() * palette.length)];
+        colors[i * 3]     = c.r;
+        colors[i * 3 + 1] = c.g;
+        colors[i * 3 + 2] = c.b;
+      }
+
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+      geo.setAttribute("color",    new THREE.BufferAttribute(colors,    3));
+
+      const mat = new THREE.PointsMaterial({
+        size: cfg.size,
+        map: this.particleTexture,
+        vertexColors: true,
         transparent: true,
-        opacity: 0.15,
-        side: THREE.BackSide,
+        opacity: cfg.opacity,
+        blending: THREE.AdditiveBlending, // particles glow and blend into each other
+        depthWrite: false,                // prevents z-sorting artefacts
+        sizeAttenuation: true,
       });
 
-      const nebula = new THREE.Mesh(geometry, material);
-
-      // position nebulas around the space
-      const angle = (i / nebulaColors.length) * Math.PI * 2;
-      const distance = 80;
-      nebula.position.set(
-        Math.cos(angle) * distance,
-        (Math.random() - 0.5) * 40,
-        Math.sin(angle) * distance,
-      );
-
-      this.nebulaClouds.push(nebula);
-      this.scene.add(nebula);
-    });
+      const points = new THREE.Points(geo, mat);
+      this.particleLayers.push(points);
+      this.scene.add(points);
+    }
   }
 
   _positionCamera() {
-    // Position camera in the center of the void
-    this.camera.position.set(0, 0, 0);
-    this.camera.lookAt(0, 0, -10);
+    this.camera.position.set(0, 0, 10);
+    this.controls.target.set(0, 0, 0);
+    this.controls.enabled = true;
+    // force OrbitControls to resync its internal state from the new camera position
+    // (necessary because camera.lookAt() was called during the transition)
+    this.controls.update();
   }
 }
