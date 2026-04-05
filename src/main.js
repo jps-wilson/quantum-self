@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
 import { SCENE_CONFIG } from "./config/constants.js";
+import { Wormhole } from "./utils/wormhole.js";
 import { DeskScene } from "./scenes/DeskScene.js";
 import { VoidScene } from "./scenes/VoidScene.js";
 import { SceneManager } from "./scenes/SceneManager.js";
@@ -24,9 +25,6 @@ camera.position.set(...SCENE_CONFIG.camera.position);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.5;
-renderer.outputColorSpace = THREE.SRGBColorSpace;
 document.getElementById("three-container").appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -35,7 +33,7 @@ controls.dampingFactor = SCENE_CONFIG.controls.dampingFactor;
 controls.target.set(...SCENE_CONFIG.controls.target);
 
 // ============================================
-//              LIGHTING
+//                LIGHTING
 // ============================================
 
 const ambientLight = new THREE.AmbientLight(
@@ -53,105 +51,97 @@ bulbLight.position.set(...SCENE_CONFIG.lighting.bulb.position);
 bulbLight.castShadow = true;
 scene.add(bulbLight);
 
-// bulb visual — glass envelope + metal socket + soft glow halo
-const bulbGroup = new THREE.Group();
-bulbGroup.position.copy(bulbLight.position);
-
-// glass envelope (the glowing part)
-const glassMesh = new THREE.Mesh(
-  new THREE.SphereGeometry(0.12, 16, 16),
-  new THREE.MeshStandardMaterial({
-    color: SCENE_CONFIG.lighting.bulb.color,
-    emissive: SCENE_CONFIG.lighting.bulb.color,
-    emissiveIntensity: 4,
-    transparent: true,
-    opacity: 0.92,
-  }),
-);
-bulbGroup.add(glassMesh);
-
-// metal socket/base
-const socketMesh = new THREE.Mesh(
-  new THREE.CylinderGeometry(0.045, 0.055, 0.08, 12),
-  new THREE.MeshStandardMaterial({
-    color: 0x999999,
-    metalness: 0.85,
-    roughness: 0.35,
-  }),
-);
-socketMesh.position.y = -0.12;
-bulbGroup.add(socketMesh);
-
-// soft glow halo — large transparent sphere, additive so it bleeds warm light
-const glowMesh = new THREE.Mesh(
-  new THREE.SphereGeometry(0.55, 16, 16),
-  new THREE.MeshBasicMaterial({
-    color: SCENE_CONFIG.lighting.bulb.color,
-    transparent: true,
-    opacity: 0.07,
-    side: THREE.BackSide,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false,
-  }),
-);
-bulbGroup.add(glowMesh);
-
-scene.add(bulbGroup);
-
 // ============================================
-//              TRANSITION
+//           WORMHOLE SETUP
 // ============================================
 
-const flashEl = document.getElementById("transition-flash");
+const wormhole = new Wormhole(scene);
+let voidScene = null;
 
-function flashIn(duration) {
-  flashEl.style.transition = `opacity ${duration}ms ease-in`;
-  flashEl.style.opacity = "1";
-  return new Promise((resolve) => setTimeout(resolve, duration));
-}
-
-function flashOut(duration) {
-  flashEl.style.transition = `opacity ${duration}ms ease-out`;
-  flashEl.style.opacity = "0";
-}
-
-// triggered when user types "start" in the terminal
+// Transition callback: triggered when user types "start"
 async function onTransitionStart() {
-  // fade terminal out, revealing the 3D scene
-  terminal.fadeOut(800);
-  await new Promise((resolve) => setTimeout(resolve, 900));
-  terminal.hide();
+  console.log("🌀 Starting wormhole transition...");
 
-  // flash to white — the dimensional leap moment
-  await flashIn(400);
+  // 1. Fade out terminal (1 second)
+  terminal.fadeOut(1000);
+  await new Promise((resolve) => setTimeout(resolve, 1000));
 
-  // hide desk lighting before switching scenes
-  bulbLight.visible = false;
-  bulbGroup.visible = false;
+  // 2. Disable controls
+  controls.enabled = false;
 
-  // switch to the void
+  // 3. Hide desk/monitor
+  hideDeskScene();
+
+  // 4. Activate wormhole
+  wormhole.active();
+
+  // 5. Start wormhole — also begin building the tunnel-exit light 4s before it ends
+  const flash = document.getElementById("transition-flash");
+  const WORMHOLE_DURATION = 19000;
+  const FLASH_BUILDUP = 4000;
+
+  const flashBuildupTimer = setTimeout(() => {
+    flash.style.transition = `opacity ${FLASH_BUILDUP / 1000}s ease-in`;
+    flash.style.opacity = "1";
+  }, WORMHOLE_DURATION - FLASH_BUILDUP);
+
+  await wormhole.animate();
+  clearTimeout(flashBuildupTimer);
+
+  // 6. Dispose wormhole and load void scene underneath while still white
+  wormhole.dispose();
   sceneManager.setScene(voidScene);
 
-  // fade out to reveal the dimensional space
-  flashOut(1500);
+  // 7. Fade the white light out to reveal the void
+  await new Promise((resolve) => {
+    flash.style.transition = "opacity 2s ease-out";
+    flash.style.opacity = "0";
+    setTimeout(resolve, 2000);
+  });
+
+  console.log("✅ Wormhole transition complete");
 }
 
-// ============================================
-//              SCENES
-// ============================================
+function hideDeskScene() {
+  scene.traverse((object) => {
+    if (
+      object.userData &&
+      (object.userData.isDesk || object.userData.isMonitor)
+    ) {
+      object.visible = false;
+    }
+  });
+}
 
 const terminal = new Terminal(onTransitionStart);
 const sceneManager = new SceneManager(scene, camera, renderer, controls);
 const deskScene = new DeskScene(scene, camera, controls, terminal);
-let voidScene = null;
+
+// ============================================
+//              INITIALIZATION
+// ============================================
 
 async function init() {
+  console.log("⏳ Loading assets...");
+
+  // Load desk scene
   await deskScene.init();
 
+  // Load wormhole textures
+  await wormhole.loadTextures();
+
+  // Generate wormhole geometry
+  wormhole.generate();
+
+  // Create void scene
   voidScene = new VoidScene(scene, camera, controls);
   await voidScene.init();
 
+  // Start with desk scene
   sceneManager.setScene(deskScene);
+
+  console.log("✅ All assets loaded - ready to start!");
+  console.log("💡 Click the monitor to begin");
 }
 
 init();
@@ -160,12 +150,21 @@ init();
 //              ANIMATION LOOP
 // ============================================
 
+let lastTime = 0;
+
 function animate(timestamp) {
   requestAnimationFrame(animate);
 
   const time = timestamp / 1000;
+  const deltaTime = time - lastTime;
+  lastTime = time;
 
   controls.update();
+
+  // Update wormhole camera movement if active
+  wormhole.update(camera);
+
+  // Update current scene
   sceneManager.update(time);
   sceneManager.render();
 }
