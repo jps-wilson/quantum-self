@@ -73,7 +73,11 @@ bulbGroup.add(glassMesh);
 // metal socket/base
 const socketMesh = new THREE.Mesh(
   new THREE.CylinderGeometry(0.045, 0.055, 0.08, 12),
-  new THREE.MeshStandardMaterial({ color: 0x999999, metalness: 0.85, roughness: 0.35 }),
+  new THREE.MeshStandardMaterial({
+    color: 0x999999,
+    metalness: 0.85,
+    roughness: 0.35,
+  }),
 );
 socketMesh.position.y = -0.12;
 bulbGroup.add(socketMesh);
@@ -136,10 +140,10 @@ async function onTransitionStart() {
 //              SCENES
 // ============================================
 
-const terminal     = new Terminal(onTransitionStart);
+const terminal = new Terminal(onTransitionStart);
 const sceneManager = new SceneManager(scene, camera, renderer, controls);
-const deskScene    = new DeskScene(scene, camera, controls, terminal);
-let   voidScene    = null;
+const deskScene = new DeskScene(scene, camera, controls, terminal);
+let voidScene = null;
 
 async function init() {
   await deskScene.init();

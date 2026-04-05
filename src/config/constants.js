@@ -54,11 +54,11 @@ export const MODELS = {
 // TRANSITION CONFIG
 export const TRANSITION_CONFIG = {
   blackHole: {
-    duration: 5.0,       // total transition duration (seconds)
-    spawnDistance: 12,   // how far in front of camera it spawns
-    maxScale: 3.5,       // final model scale
-    spinSpeed: 1.2,      // rotation speed
-    pullStrength: 18,    // camera pull force (much stronger)
+    duration: 5.0, // total transition duration (seconds)
+    spawnDistance: 12, // how far in front of camera it spawns
+    maxScale: 3.5, // final model scale
+    spinSpeed: 1.2, // rotation speed
+    pullStrength: 18, // camera pull force (much stronger)
   },
   terminal: {
     fadeOutDuration: 1.0, // how long terminal fades
