@@ -1,6 +1,8 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
-import { SCENE_CONFIG } from "./config/constants.js";
+import { gsap } from "gsap";
+import { SCENE_CONFIG, MODELS } from "./config/constants.js";
+import { loadModel } from "./utils/modelLoader.js";
 import { Wormhole } from "./utils/wormhole.js";
 import { DeskScene } from "./scenes/DeskScene.js";
 import { VoidScene } from "./scenes/VoidScene.js";
@@ -24,7 +26,12 @@ camera.position.set(...SCENE_CONFIG.camera.position);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+renderer.useLegacyLights = false;
 document.getElementById("three-container").appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -47,9 +54,7 @@ const bulbLight = new THREE.PointLight(
   SCENE_CONFIG.lighting.bulb.intensity,
   SCENE_CONFIG.lighting.bulb.distance,
 );
-bulbLight.position.set(...SCENE_CONFIG.lighting.bulb.position);
 bulbLight.castShadow = true;
-scene.add(bulbLight);
 
 // ============================================
 //           WORMHOLE SETUP
@@ -75,24 +80,42 @@ async function onTransitionStart() {
   // 4. Activate wormhole
   wormhole.active();
 
-  // 5. Start wormhole — also begin building the tunnel-exit light 4s before it ends
+  // 5. Start wormhole audio (fade in over 3s)
+  const audio = new Audio("/audio/wormhole.wav");
+  audio.loop = true;
+  audio.volume = 0;
+  audio.play();
+  gsap.to(audio, { volume: 0.8, duration: 3 });
+
+  // 6. Start wormhole — also begin building the tunnel-exit light 4s before it ends
   const flash = document.getElementById("transition-flash");
   const WORMHOLE_DURATION = 19000;
   const FLASH_BUILDUP = 4000;
 
+  const outpostAudio = new Audio("/audio/outpost.mp3");
+  outpostAudio.loop = true;
+  outpostAudio.volume = 0;
+
   const flashBuildupTimer = setTimeout(() => {
+    // Fade out wormhole audio and flash to white
     flash.style.transition = `opacity ${FLASH_BUILDUP / 1000}s ease-in`;
     flash.style.opacity = "1";
+    gsap.to(audio, { volume: 0, duration: FLASH_BUILDUP / 1000 });
+
+    // Crossfade into outpost audio
+    outpostAudio.play();
+    gsap.to(outpostAudio, { volume: 0.7, duration: FLASH_BUILDUP / 1000 });
   }, WORMHOLE_DURATION - FLASH_BUILDUP);
 
   await wormhole.animate();
   clearTimeout(flashBuildupTimer);
 
-  // 6. Dispose wormhole and load void scene underneath while still white
+  // 7. Dispose wormhole and load void scene underneath while still white
+  audio.pause();
   wormhole.dispose();
   sceneManager.setScene(voidScene);
 
-  // 7. Fade the white light out to reveal the void
+  // 8. Fade the white light out to reveal the void
   await new Promise((resolve) => {
     flash.style.transition = "opacity 2s ease-out";
     flash.style.opacity = "0";
@@ -123,6 +146,32 @@ const deskScene = new DeskScene(scene, camera, controls, terminal);
 
 async function init() {
   console.log("⏳ Loading assets...");
+
+  // Load light fixture model and attach the point light to it
+  const lightModel = await loadModel(
+    MODELS.light.path,
+    MODELS.light.position,
+    MODELS.light.scale,
+  );
+
+  // Make the bulb meshes glow like a lit filament bulb
+  const BULB_MESHES = [
+    "Clean_light_bulb_clean_bulb_light_mat_0",
+    "Broken_light_bulb_old_bulb_light_mat_0",
+    "wire_filament_wire_filament_mat_0",
+    "wire_filament001_old_wire_filament_mat_0",
+  ];
+  lightModel.traverse((child) => {
+    if (child.isMesh && BULB_MESHES.includes(child.name)) {
+      child.material = child.material.clone();
+      child.material.emissive = new THREE.Color(0xff8800);
+      child.material.emissiveIntensity = child.name.includes("filament") ? 3.5 : 1.5;
+    }
+  });
+
+  lightModel.userData.isDesk = true;
+  lightModel.add(bulbLight);
+  scene.add(lightModel);
 
   // Load desk scene
   await deskScene.init();

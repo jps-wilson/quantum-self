@@ -11,8 +11,8 @@ export const SCENE_CONFIG = {
     target: [0, 1, 0],
   },
   lighting: {
-    ambient: { color: 0x8090a0, intensity: 2.5 },
-    bulb: { color: 0xfff5e0, intensity: 15, distance: 60, position: [0, 3, 0] },
+    ambient: { color: 0x8090a0, intensity: 0.3 },
+    bulb: { color: 0xff9a2e, intensity: 40, distance: 80, position: [0, 0, 0] },
   },
 };
 
@@ -48,6 +48,11 @@ export const MODELS = {
     path: "/models/quantum_leap.glb",
     position: [0, 2, -5],
     scale: [0.1, 0.1, 0.1],
+  },
+  light: {
+    path: "/models/light.glb",
+    position: [0, 3, 0],
+    scale: [0.006, 0.006, 0.006],
   },
 };
 
