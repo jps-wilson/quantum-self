@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { MODELS, MONITOR_CONFIG } from "../config/constants.js";
 import { loadModel } from "../utils/modelLoader.js";
+import { SpatialAudio } from "../utils/SpatialAudio.js";
 
 /**
  * Desk Scene
@@ -22,6 +23,10 @@ export class DeskScene {
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
     this.isHoveringMonitor = false;
+
+    // audio setup
+    this.audioListener = SpatialAudio.createListener(camera);
+    this.computerHum = null;
 
     this._setupCanvas();
     this._setupMouseEvents();
@@ -59,11 +64,31 @@ export class DeskScene {
         child.material = this.screenMaterial;
       }
     });
+
+    // adding spatial audio to monitor
+    this.computerHum = new SpatialAudio(
+      this.camera,
+      "/public/audio/computer-hum.wav",
+      {
+        refDistance: 2, // starts fading after 2 units away
+        rolloffFactor: 1.5, // how quickly it fades with distance
+        volume: 0.4, // max volume when close
+        loop: true,
+        autoplay: true,
+      },
+    );
+
+    await this.computerHum.attachTo(this.monitorModel, this.audioListener);
+    console.log("Spatial computer audio loaded");
   }
 
   // called when scene becomes active
   enter() {
     this.controls.enabled = true;
+    // resume audio if it was paused
+    if (this.computerHum) {
+      this.computerHum.play();
+    }
   }
 
   // called when scene becomes inactive
@@ -73,6 +98,10 @@ export class DeskScene {
         obj.visible = false;
       }
     });
+    // pause audio when leaving scene
+    if (this.computerHum) {
+      this.computerHum.pause();
+    }
   }
 
   // update loop (called every frame)
@@ -107,14 +136,14 @@ export class DeskScene {
     // QUANTUM
     this.ctx.textAlign = "center";
     this.ctx.shadowColor = "#00ff41";
-    this.ctx.shadowBlur = 18 * pulse;
+    this.ctx.shadowBlur = 4 * pulse;
     this.ctx.fillStyle = "#00ff41";
     this.ctx.font = "bold 52px monospace";
     this.ctx.fillText("QUANTUM", width / 2, height / 2 - 16);
 
     // SELF
     this.ctx.shadowColor = "#ffa657";
-    this.ctx.shadowBlur = 12 * pulse;
+    this.ctx.shadowBlur = 2 * pulse;
     this.ctx.fillStyle = "#ffa657";
     this.ctx.font = "bold 22px monospace";
     this.ctx.fillText("S  E  L  F", width / 2, height / 2 + 22);
@@ -213,6 +242,7 @@ export class DeskScene {
     this.controls.enabled = false;
     document.body.style.cursor = "default";
     this.isHoveringMonitor = false;
+    if (this.onTerminalOpen) this.onTerminalOpen();
     this.terminal.enter();
   }
 }

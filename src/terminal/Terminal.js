@@ -21,9 +21,12 @@ export class Terminal {
     this.username = "";
     this.onTransitionStart = onTransitionStart; // callback when user types "start"
 
-    // AUDIO SETUP
-    this.keypressSound = new Audio("/public/audio/keypress.mp3");
-    this.keypressSound.volume = 0.3;
+    this.keypressSound = new Audio("/audio/keypress.mp3");
+    this.keypressSound.volume = 1;
+
+    this.textSound = new Audio("/audio/text.wav");
+    this.textSound.volume = 1;
+    this._textSoundTimer = null;
 
     this._setupKeyboardInput();
   }
@@ -92,6 +95,18 @@ export class Terminal {
     line.textContent = text;
     this.outputEl.appendChild(line);
     this.outputEl.scrollTop = this.outputEl.scrollHeight;
+
+    if (text.trim().length > 0) {
+      if (this.textSound.paused) {
+        this.textSound.currentTime = 0;
+        this.textSound.play().catch(() => {});
+      }
+      clearTimeout(this._textSoundTimer);
+      this._textSoundTimer = setTimeout(() => {
+        this.textSound.pause();
+        this.textSound.currentTime = 0;
+      }, 300);
+    }
   }
 
   _setPrompt(text) {
@@ -120,14 +135,9 @@ export class Terminal {
       if (!this.phase || this.phase === "boot" || this.phase === "transition")
         return;
 
-      // play keypress sound for all keys except special cases
-      if (
-        event.key.length === 1 ||
-        event.key === "Backspace" ||
-        event.key === "Enter"
-      ) {
-        this.keypressSound.currentTime = 0; // reset for rapid typing
-        this.keypressSound.play().catch(() => {}); // catches autoplay errors
+      if (event.key.length === 1 || event.key === "Backspace" || event.key === "Enter") {
+        this.keypressSound.currentTime = 0;
+        this.keypressSound.play().catch(() => {});
       }
 
       if (event.key === "Enter") {

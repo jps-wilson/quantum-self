@@ -11,8 +11,8 @@ export const SCENE_CONFIG = {
     target: [0, 1, 0],
   },
   lighting: {
-    ambient: { color: 0x8090a0, intensity: 0.3 },
-    bulb: { color: 0xff9a2e, intensity: 40, distance: 80, position: [0, 0, 0] },
+    ambient: { color: 0x8090a0, intensity: 1.0 },
+    bulb: { color: 0xffc87a, intensity: 40, distance: 80, position: [0, 0, 0] },
   },
 };
 
@@ -22,8 +22,8 @@ export const MONITOR_CONFIG = {
   screen: {
     meshName: "Plane009_screen3_0",
     emissiveColor: 0x00ff41,
-    emissiveBase: 0.4,
-    emissiveVariance: 0.08,
+    emissiveBase: 8.0,
+    emissiveVariance: 0.6,
   },
   effects: {
     scanlines: { gap: 4, thickness: 2, opacity: 0.25 },

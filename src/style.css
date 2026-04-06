@@ -128,6 +128,8 @@ html, body {
   flex: 1;
   overflow-y: auto;
   scrollbar-width: none;
+  position: relative;
+  z-index: 20;
 }
 
 #terminal-output::-webkit-scrollbar {
@@ -169,6 +171,8 @@ html, body {
   text-shadow: 0 0 8px rgba(0, 255, 65, 0.55);
   white-space: pre;
   visibility: hidden;
+  position: relative;
+  z-index: 20;
 }
 
 #input-prompt,

@@ -31,7 +31,6 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.2;
-renderer.useLegacyLights = false;
 document.getElementById("three-container").appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -63,13 +62,23 @@ bulbLight.castShadow = true;
 const wormhole = new Wormhole(scene);
 let voidScene = null;
 
+const computerHum = new Audio("/audio/pulse.mp3");
+computerHum.loop = true;
+computerHum.volume = 1;
+
 // Transition callback: triggered when user types "start"
 async function onTransitionStart() {
   console.log("🌀 Starting wormhole transition...");
 
-  // 1. Fade out terminal (1 second)
+  // 1. Fade out terminal and computer hum together (1 second), then hide terminal
   terminal.fadeOut(1000);
+  gsap.to(computerHum, {
+    volume: 0,
+    duration: 1,
+    onComplete: () => computerHum.pause(),
+  });
   await new Promise((resolve) => setTimeout(resolve, 1000));
+  terminal.hide();
 
   // 2. Disable controls
   controls.enabled = false;
@@ -139,6 +148,10 @@ function hideDeskScene() {
 const terminal = new Terminal(onTransitionStart);
 const sceneManager = new SceneManager(scene, camera, renderer, controls);
 const deskScene = new DeskScene(scene, camera, controls, terminal);
+deskScene.onTerminalOpen = () => {
+  computerHum.pause();
+  computerHum.currentTime = 0;
+};
 
 // ============================================
 //              INITIALIZATION
@@ -164,8 +177,10 @@ async function init() {
   lightModel.traverse((child) => {
     if (child.isMesh && BULB_MESHES.includes(child.name)) {
       child.material = child.material.clone();
-      child.material.emissive = new THREE.Color(0xff8800);
-      child.material.emissiveIntensity = child.name.includes("filament") ? 3.5 : 1.5;
+      child.material.emissive = new THREE.Color(0xffb347);
+      child.material.emissiveIntensity = child.name.includes("filament")
+        ? 3.5
+        : 1.5;
     }
   });
 
@@ -173,8 +188,10 @@ async function init() {
   lightModel.add(bulbLight);
   scene.add(lightModel);
 
-  // Load desk scene
-  await deskScene.init();
+  // Load desk scene (ignore embedded audio errors from GLB)
+  await deskScene.init().catch((err) => {
+    console.warn("Non-fatal error during desk scene load:", err);
+  });
 
   // Load wormhole textures
   await wormhole.loadTextures();
@@ -188,6 +205,13 @@ async function init() {
 
   // Start with desk scene
   sceneManager.setScene(deskScene);
+
+  // Start computer hum on first user interaction (autoplay policy)
+  const startHum = () => {
+    computerHum.play().catch(() => {});
+    window.removeEventListener("pointerdown", startHum);
+  };
+  window.addEventListener("pointerdown", startHum);
 
   console.log("✅ All assets loaded - ready to start!");
   console.log("💡 Click the monitor to begin");
@@ -212,6 +236,14 @@ function animate(timestamp) {
 
   // Update wormhole camera movement if active
   wormhole.update(camera);
+
+  // Scale monitor pulse volume by distance from the monitor
+  if (!computerHum.paused) {
+    const monitorPos = new THREE.Vector3(...MODELS.monitor.position);
+    const dist = camera.position.distanceTo(monitorPos);
+    const maxDist = 6;
+    computerHum.volume = Math.max(0, 1 - dist / maxDist);
+  }
 
   // Update current scene
   sceneManager.update(time);
