@@ -21,6 +21,10 @@ export class Terminal {
     this.username = "";
     this.onTransitionStart = onTransitionStart; // callback when user types "start"
 
+    // AUDIO SETUP
+    this.keypressSound = new Audio("/public/audio/keypress.mp3");
+    this.keypressSound.volume = 0.3;
+
     this._setupKeyboardInput();
   }
 
@@ -115,6 +119,16 @@ export class Terminal {
     window.addEventListener("keydown", (event) => {
       if (!this.phase || this.phase === "boot" || this.phase === "transition")
         return;
+
+      // play keypress sound for all keys except special cases
+      if (
+        event.key.length === 1 ||
+        event.key === "Backspace" ||
+        event.key === "Enter"
+      ) {
+        this.keypressSound.currentTime = 0; // reset for rapid typing
+        this.keypressSound.play().catch(() => {}); // catches autoplay errors
+      }
 
       if (event.key === "Enter") {
         this._handleEnter();
