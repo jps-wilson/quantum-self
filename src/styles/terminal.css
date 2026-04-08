@@ -1,0 +1,105 @@
+/*  TERMINAL STRUCTURE */
+
+#terminal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  background: #000;
+  z-index: 100;
+  font-family: "Courier New", "Courier New", Courier, monospace;
+  font-size: 14px;
+  color: #c9d1d9;
+  animation: flicker 0.15s infinite;
+}
+
+#terminal.entering {
+  display: block;
+  animation: terminal-enter 0.8s ease-out forwards;
+}
+
+#terminal.active {
+  display: block;
+  animation: flicker 0.15s infinite;
+}
+
+/* TERMINAL OUTPUT */
+
+#terminal-output {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: none;
+  position: relative;
+  z-index: 20;
+}
+
+#terminal-output::-webkit-scrollbar {
+  display: none;
+}
+
+.terminal-line {
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-all;
+  min-height: 1.6em;
+}
+
+/* TERMINAL INPUT */
+
+#terminal-input-row {
+  display: flex;
+  align-items: center;
+  min-height: 1.6em;
+  margin-top: 2px;
+  color: #00ff41;
+  text-shadow:
+    0 0 4px rgba(0, 255, 65, 0.7),
+    0 0 8px rgba(0, 255, 65, 0.5),
+    0 0 14px rgba(0, 255, 65, 0.35);
+  white-space: pre;
+  visibility: hidden;
+  position: relative;
+  z-index: 20;
+}
+
+#input-prompt,
+#input-display {
+  white-space: pre;
+}
+
+.cursor {
+  display: inline-block;
+  width: 9px;
+  height: 1.1em;
+  background: #00ff41;
+  box-shadow:
+    0 0 4px rgba(0, 255, 65, 0.9),
+    0 0 8px rgba(0, 255, 65, 0.7),
+    0 0 12px rgba(0, 255, 65, 0.5);
+  vertical-align: text-bottom;
+  animation: blink 1s step-end infinite;
+}
+
+/* "sucked into the screen" effect - expands from monitor position */
+@keyframes terminal-enter {
+  from {
+    clip-path: circle(3% at 50% 42%);
+    filter: brightness(4) blur(3px);
+  }
+  60% {
+    filter: brightness(1.4) blur(0px);
+  }
+  to {
+    clip-path: circle(150% at 50% 42%);
+    filter: brightness(1) blur(0px);
+  }
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}

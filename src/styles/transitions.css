@@ -1,0 +1,20 @@
+/*  TRANSITION EFFECTS */
+
+#transition-flash {
+  position: fixed;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 200;
+}
+
+/* radial energy pulse - screen blend makes it additive/glowing */
+#warp-overlay {
+  position: fixed;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 150;
+  mix-blend-mode: screen;
+}

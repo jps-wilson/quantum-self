@@ -1,0 +1,29 @@
+/* TERMINAL COLOR THEMES */
+
+/* Text color variants with enhanced bloom */
+
+.terminal-line.white {
+  color: #c9d1d9;
+  text-shadow:
+    0 0 3px rgba(201, 209, 217, 0.4),
+    0 0 6px rgba(201, 209, 217, 0.3),
+    0 0 10px rgba(201, 209, 217, 0.2);
+}
+
+.terminal-line.amber {
+  color: #ffa657;
+  text-shadow:
+    0 0 4px rgba(255, 166, 87, 0.6),
+    0 0 8px rgba(255, 166, 87, 0.45),
+    0 0 14px rgba(255, 166, 87, 0.3),
+    0 0 20px rgba(255, 140, 50, 0.2);
+}
+
+.terminal-line.green {
+  color: #00ff41;
+  text-shadow:
+    0 0 4px rgba(0, 255, 65, 0.7),
+    0 0 8px rgba(0, 255, 65, 0.5),
+    0 0 14px rgba(0, 255, 65, 0.35),
+    0 0 20px rgba(0, 255, 65, 0.2);
+}

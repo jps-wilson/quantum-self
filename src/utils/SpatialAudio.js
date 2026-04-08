@@ -19,7 +19,7 @@ export class SpatialAudio {
 
     this.listener = null;
     this.sound = null;
-    this.isReady - false;
+    this.isReady = false;
   }
 
   /**
@@ -46,6 +46,7 @@ export class SpatialAudio {
       const audioLoader = new THREE.AudioLoader();
 
       audioLoader.load(
+        this.audioPath,
         (buffer) => {
           this.sound.setBuffer(buffer);
           this.sound.setRefDistance(this.refDistance);

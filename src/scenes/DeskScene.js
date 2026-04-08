@@ -68,7 +68,7 @@ export class DeskScene {
     // adding spatial audio to monitor
     this.computerHum = new SpatialAudio(
       this.camera,
-      "/public/audio/computer-hum.wav",
+      "/audio/computer-hum.wav",
       {
         refDistance: 2, // starts fading after 2 units away
         rolloffFactor: 1.5, // how quickly it fades with distance
