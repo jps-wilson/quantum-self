@@ -209,6 +209,9 @@ export class MultiverseScene {
     this.blobs = [];
     this.blobOriginalPositions = [];
 
+    this.tweens.forEach((tween) => tween.kill());
+    this.tweens = [];
+
     this.lights.forEach((light) => {
       this.scene.remove(light);
     });
