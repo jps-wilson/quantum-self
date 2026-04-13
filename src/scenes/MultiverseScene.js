@@ -3,17 +3,6 @@ import * as THREE from "three";
 /**
  * Multiverse Scene
  * Fractal cosmic bubble environment — loaded after the wormhole transition.
- *
- * Build order (see teaching plan):
- *   Step 0  ✓ Shell wired into main.js
- *   Step 1  - Dark background + fog
- *   Step 2  - Particle star field
- *   Step 3  - Single iridescent bubble (MeshPhysicalMaterial)
- *   Step 4  - Nested inner glowing core (additive blending)
- *   Step 5  - Multiple bubbles via _createBubble() factory
- *   Step 6  - Organic blob connective shapes (vertex displacement)
- *   Step 7  - Lighting for the mood
- *   Step 8  - Animation (update loop + GSAP breathing)
  */
 export class MultiverseScene {
   constructor(scene, camera, controls, renderer) {
@@ -89,9 +78,9 @@ export class MultiverseScene {
     this.bubbles = [];
 
     const bubbleData = [
-      { pos: [0, 0, 0], radius: 4, core: 0xffd0ff, halo: 0x8833f },
-      { pos: [5, 1, -3], radius: 2.5, core: 0xaaddff, halo: 0x2244ff },
-      { pos: [-4, -1, -2], radius: 3, core: 0xffeeaa, halo: 0x6622ff },
+      { pos: [-3, 0, 0], radius: 5, core: 0xffcc88, halo: 0x6611ff }, // large left bubble
+      { pos: [4, 0.5, -2], radius: 3.5, core: 0xffeedd, halo: 0x4422ff }, // medium right bubble
+      { pos: [1, 2, -6], radius: 1.8, core: 0xddaaff, halo: 0x8833ff }, // small, far back bubble
     ];
 
     bubbleData.forEach((b) => {
@@ -103,7 +92,7 @@ export class MultiverseScene {
     // Step 7: add lights here
 
     // Position camera
-    this.camera.position.set(0, 0, 20);
+    this.camera.position.set(0, 0, 28);
     this.controls.target.set(0, 0, 0);
     this.controls.enabled = true;
     this.controls.update();
@@ -186,7 +175,7 @@ export class MultiverseScene {
       iridescenceIOR: 1.3,
       iridescenceThicknessRange: [100, 400],
       transparent: true,
-      opacity: 0.3,
+      opacity: 0.45,
       side: THREE.DoubleSide,
       envMap: this.envMap,
     });
