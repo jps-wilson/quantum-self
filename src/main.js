@@ -92,6 +92,7 @@ async function onTransitionStart() {
 
   // 2. Disable controls
   controls.enabled = false;
+  controls.domElement.style.pointerEvents = "none";
 
   // 3. Hide desk/monitor
   hideDeskScene();

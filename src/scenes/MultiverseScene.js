@@ -64,6 +64,9 @@ export class MultiverseScene {
     this.scene.fog = new THREE.FogExp2(0x05030f, 0.006);
     this.scene.environment = this.envMap;
 
+    this.controls.enabled = true;
+    this.controls.domElement.style.pointerEvents = "auto";
+
     const count = 4000;
     const geo = new THREE.BufferGeometry();
     const positions = new Float32Array(count * 3);
