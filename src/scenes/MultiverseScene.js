@@ -2,8 +2,9 @@ import * as THREE from "three";
 import gsap from "gsap";
 import { createBloom } from "./multiverse/createBloom.js";
 import { createStars } from "./multiverse/createStars.js";
-import { createBubbles } from "./multiverse/createBubbles.js";
+import { createBubbles, BUBBLE_DATA } from "./multiverse/createBubbles.js";
 import { createLights } from "./multiverse/createLights.js";
+import { MultiverseUI } from "../ui/MultiverseUI.js";
 
 /**
  * MultiverseScene
@@ -41,15 +42,19 @@ export class MultiverseScene {
     this.blobs = [];
     this.blobOriginalPositions = [];
     this.microBubbles = [];
+
     this.tweens = [];
+
     this.lights = [];
+
+    this.ui = null;
 
     this.ambientAudio = null;
     this._startAudio = null;
     this._onResize = null;
   }
 
-  // ─── Lifecycle ────────────────────────────────────────────────────────────
+  // * ─── Lifecycle ────────────────────────────────────────────────────────────
 
   async init() {
     // Load environment map (required for transmission materials)
@@ -64,7 +69,11 @@ export class MultiverseScene {
     texture.dispose();
 
     // Set up post-processing bloom
-    const { composer, bloom } = createBloom(this.renderer, this.scene, this.camera);
+    const { composer, bloom } = createBloom(
+      this.renderer,
+      this.scene,
+      this.camera,
+    );
     this.composer = composer;
     this.bloom = bloom;
   }
@@ -80,13 +89,19 @@ export class MultiverseScene {
     this.controls.domElement.style.pointerEvents = "auto";
 
     // Build scene elements via sub-modules
-    ({ stars: this.stars, nebula: this.nebula,
-       starTexture: this.starTexture, nebulaTexture: this.nebulaTexture
+    ({
+      stars: this.stars,
+      nebula: this.nebula,
+      starTexture: this.starTexture,
+      nebulaTexture: this.nebulaTexture,
     } = createStars(this.scene));
 
-    ({ bubbles: this.bubbles, blobs: this.blobs,
-       blobOriginalPositions: this.blobOriginalPositions,
-       microBubbles: this.microBubbles, tweens: this.tweens
+    ({
+      bubbles: this.bubbles,
+      blobs: this.blobs,
+      blobOriginalPositions: this.blobOriginalPositions,
+      microBubbles: this.microBubbles,
+      tweens: this.tweens,
     } = createBubbles(this.scene, this.envMap));
 
     // Mute any desk-scene ambient lights before adding multiverse lights
@@ -106,8 +121,24 @@ export class MultiverseScene {
     this._setupAudio();
 
     // Keep composer sized correctly on window resize
-    this._onResize = () => this.composer.setSize(window.innerWidth, window.innerHeight);
+    this._onResize = () =>
+      this.composer.setSize(window.innerWidth, window.innerHeight);
     window.addEventListener("resize", this._onResize);
+
+    // UI - question panel and narrative overlays
+    this.ui = new MultiverseUI(this.camera);
+    this.ui.init(
+      BUBBLE_DATA.map((b) => ({
+        x: b.pos[0],
+        y: b.pos[1],
+        z: b.pos[2],
+        radius: b.radius,
+      })),
+    );
+    this.ui.onAnswer = (questionId, answerId) => {
+      // TODO: Bubble reaction will be added here in a later step
+      console.log(`Question ${questionId} answered: ${answerId}`);
+    };
   }
 
   exit() {
@@ -122,7 +153,10 @@ export class MultiverseScene {
       this.scene.remove(this.stars);
       this.stars = null;
     }
-    if (this.starTexture) { this.starTexture.dispose(); this.starTexture = null; }
+    if (this.starTexture) {
+      this.starTexture.dispose();
+      this.starTexture = null;
+    }
 
     // Nebula
     if (this.nebula) {
@@ -131,12 +165,18 @@ export class MultiverseScene {
       this.scene.remove(this.nebula);
       this.nebula = null;
     }
-    if (this.nebulaTexture) { this.nebulaTexture.dispose(); this.nebulaTexture = null; }
+    if (this.nebulaTexture) {
+      this.nebulaTexture.dispose();
+      this.nebulaTexture = null;
+    }
 
     // Bubbles
     this.bubbles.forEach((group) => {
       group.traverse((child) => {
-        if (child.isMesh) { child.geometry.dispose(); child.material.dispose(); }
+        if (child.isMesh) {
+          child.geometry.dispose();
+          child.material.dispose();
+        }
       });
       this.scene.remove(group);
     });
@@ -154,7 +194,10 @@ export class MultiverseScene {
     // Micro-bubbles
     this.microBubbles.forEach((group) => {
       group.traverse((child) => {
-        if (child.isMesh) { child.geometry.dispose(); child.material.dispose(); }
+        if (child.isMesh) {
+          child.geometry.dispose();
+          child.material.dispose();
+        }
       });
       this.scene.remove(group);
     });
@@ -174,6 +217,12 @@ export class MultiverseScene {
       }
     });
 
+    // UI
+    if (this.ui) {
+      this.ui.dispose();
+      this.ui = null;
+    }
+
     // Audio
     if (this._startAudio) {
       window.removeEventListener("pointerdown", this._startAudio);
@@ -187,7 +236,7 @@ export class MultiverseScene {
     window.removeEventListener("resize", this._onResize);
   }
 
-  // ─── Per-frame update ─────────────────────────────────────────────────────
+  // * ─── Per-frame update ─────────────────────────────────────────────────────
 
   update(time) {
     // Blob vertex deformation — organic breathing surface
@@ -203,10 +252,12 @@ export class MultiverseScene {
         const r = Math.sqrt(ox * ox + oy * oy + oz * oz) || 1;
         const angle = Math.atan2(oy, ox);
         const elevation = Math.asin(Math.max(-1, Math.min(1, oz / r)));
-        const wave = Math.sin(angle * 3 + time * 0.8) * Math.cos(elevation * 2 + time * 0.5);
+        const wave =
+          Math.sin(angle * 3 + time * 0.8) *
+          Math.cos(elevation * 2 + time * 0.5);
         const disp = 1 + wave * 0.18;
 
-        posAttr.array[i * 3]     = ox * disp;
+        posAttr.array[i * 3] = ox * disp;
         posAttr.array[i * 3 + 1] = oy * disp;
         posAttr.array[i * 3 + 2] = oz * disp;
       }
@@ -231,15 +282,19 @@ export class MultiverseScene {
       this.nebula.rotation.y = time * 0.004;
       this.nebula.rotation.x = time * 0.002;
     }
+
+    if (this.ui) {
+      this.ui.update(this.camera, this.render);
+    }
   }
 
-  // ─── Render ───────────────────────────────────────────────────────────────
+  // * ─── Render ───────────────────────────────────────────────────────────────
 
   render() {
     this.composer.render();
   }
 
-  // ─── Private ──────────────────────────────────────────────────────────────
+  // * ─── Private ──────────────────────────────────────────────────────────────
 
   _setupAudio() {
     this.ambientAudio = new Audio("/audio/ambient-soundscape.mp3");
@@ -260,7 +315,9 @@ export class MultiverseScene {
       .play()
       .then(() => gsap.to(this.ambientAudio, { volume: 0.35, duration: 4 }))
       .catch(() => {
-        window.addEventListener("pointerdown", this._startAudio, { once: true });
+        window.addEventListener("pointerdown", this._startAudio, {
+          once: true,
+        });
       });
   }
 }

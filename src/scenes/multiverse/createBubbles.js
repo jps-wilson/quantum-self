@@ -163,14 +163,8 @@ export function createBubbles(scene, envMap) {
   );
   connector.scale.set(1.2, 0.8, 0.8);
 
-  // Three main bubbles — large left, medium right, small far back
-  const bubbleData = [
-    { pos: [-8, 0, 0], radius: 14, core: 0xffcc88, halo: 0x6611ff },
-    { pos: [10, 1, -5], radius: 10, core: 0xffeedd, halo: 0x4422ff },
-    { pos: [3, 4, -18], radius: 6, core: 0xddaaff, halo: 0x8833ff },
-  ];
-
-  bubbleData.forEach((b) => {
+  // using local bubbleData array
+  BUBBLE_DATA.forEach((b) => {
     const group = createBubble(b.pos, b.radius, b.core, b.halo, envMap);
     scene.add(group);
     bubbles.push(group);
