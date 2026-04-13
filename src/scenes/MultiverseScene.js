@@ -20,6 +20,9 @@ export class MultiverseScene {
     this.blobs = [];
     this.blobOriginalPositions = [];
     this.lights = [];
+    this.nebula = null;
+    this.nebulaTexture = null;
+    this.microBubbles = [];
 
     this.tweens = [];
   }
@@ -80,6 +83,41 @@ export class MultiverseScene {
     this.starTexture = mat.map;
     this.stars = new THREE.Points(geo, mat);
     this.scene.add(this.stars);
+
+    // Nebula dust cloud
+    const nebulaCount = 500;
+    const nebulaGeo = new THREE.BufferGeometry();
+    const nebulaPos = new Float32Array(nebulaCount * 3);
+
+    for (let i = 0; i < nebulaCount; i++) {
+      let x, y, z;
+      do {
+        x = (Math.random() - 0.5) * 60;
+        y = (Math.random() - 0.5) * 60;
+        z = (Math.random() - 0.5) * 60;
+      } while (Math.sqrt(x * x + y * y + z * z) > 30);
+
+      nebulaPos[i * 3] = x;
+      nebulaPos[i * 3 + 1] = y;
+      nebulaPos[i * 3 + 2] = z;
+    }
+
+    nebulaGeo.setAttribute("position", new THREE.BufferAttribute(nebulaPos, 3));
+
+    const nebulaMat = new THREE.PointsMaterial({
+      color: 0x8844ff,
+      size: 1.8,
+      sizeAttenuation: true,
+      map: this._makeStarTexture(),
+      transparent: true,
+      opacity: 0.06,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+
+    this.nebulaTexture = nebulaMat.map;
+    this.nebula = new THREE.Points(nebulaGeo, nebulaMat);
+    this.scene.add(this.nebula);
 
     this.bubbles = [];
 
@@ -224,6 +262,17 @@ export class MultiverseScene {
         delete obj.userData._prevIntensity;
       }
     });
+
+    if (this.nebula) {
+      this.nebula.geometry.dispose();
+      this.nebula.material.dispose();
+      this.scene.remove(this.nebula);
+      this.nebula = null;
+    }
+    if (this.nebulaTexture) {
+      this.nebulaTexture.dispose();
+      this.nebulaTexture = null;
+    }
   }
 
   update(time) {
@@ -261,6 +310,11 @@ export class MultiverseScene {
       bubble.rotation.y = time * (0.04 + i * 0.01);
       bubble.rotation.x = time * (0.02 + i * 0.005);
     });
+
+    if (this.nebula) {
+      this.nebula.rotation.y = time * 0.004;
+      this.nebula.rotation.x = time * 0.002;
+    }
   }
 
   _makeStarTexture() {
