@@ -14,14 +14,13 @@ export class MultiverseScene {
 
     this.originalBackground = null;
     this.stars = null;
-    this.bubble = null;
-    this.bubbleGroup = null;
+    this.starTexture = null;
+    this.nebula = null;
+    this.nebulaTexture = null;
     this.bubbles = [];
     this.blobs = [];
     this.blobOriginalPositions = [];
     this.lights = [];
-    this.nebula = null;
-    this.nebulaTexture = null;
     this.microBubbles = [];
 
     this.tweens = [];
@@ -84,18 +83,36 @@ export class MultiverseScene {
     this.stars = new THREE.Points(geo, mat);
     this.scene.add(this.stars);
 
-    // Nebula dust cloud
-    const nebulaCount = 500;
+    // Nebula cloud - particles clustered around several cloud centres
+    const nebulaCount = 600;
     const nebulaGeo = new THREE.BufferGeometry();
     const nebulaPos = new Float32Array(nebulaCount * 3);
 
+    // Cloud centres - loosely placed around the bubble cluster
+    const cloudCentres = [
+      [-5, 3, -8],
+      [6, 3, -6],
+      [-1, 6, -12],
+      [4, 4, -10],
+    ];
+
     for (let i = 0; i < nebulaCount; i++) {
-      let x, y, z;
-      do {
-        x = (Math.random() - 0.5) * 60;
-        y = (Math.random() - 0.5) * 60;
-        z = (Math.random() - 0.5) * 60;
-      } while (Math.sqrt(x * x + y * y + z * z) > 30);
+      // Pick a random cloud centre
+      const centre =
+        cloudCentres[Math.floor(Math.random() * cloudCentres.length)];
+
+      // Scatter around it using a gaussian-like spread
+      // (adding three randoms approximates a bell curve)
+      const spread = 4;
+      const x =
+        centre[0] +
+        (Math.random() + Math.random() + Math.random() - 1.5) * spread;
+      const y =
+        centre[1] +
+        (Math.random() + Math.random() + Math.random() - 1.5) * spread;
+      const z =
+        centre[2] +
+        (Math.random() + Math.random() + Math.random() - 1.5) * spread;
 
       nebulaPos[i * 3] = x;
       nebulaPos[i * 3 + 1] = y;
@@ -105,12 +122,12 @@ export class MultiverseScene {
     nebulaGeo.setAttribute("position", new THREE.BufferAttribute(nebulaPos, 3));
 
     const nebulaMat = new THREE.PointsMaterial({
-      color: 0x8844ff,
-      size: 1.8,
+      color: 0x9955ff,
+      size: 3.5,
       sizeAttenuation: true,
       map: this._makeStarTexture(),
       transparent: true,
-      opacity: 0.06,
+      opacity: 0.04,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
     });
@@ -283,6 +300,17 @@ export class MultiverseScene {
       this.nebulaTexture.dispose();
       this.nebulaTexture = null;
     }
+
+    this.microBubbles.forEach((group) => {
+      group.traverse((child) => {
+        if (child.isMesh) {
+          child.geometry.dispose();
+          child.material.dispose();
+        }
+      });
+      this.scene.remove(group);
+    });
+    this.microBubbles = [];
   }
 
   update(time) {
