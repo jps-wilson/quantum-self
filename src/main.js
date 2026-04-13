@@ -110,19 +110,11 @@ async function onTransitionStart() {
   const WORMHOLE_DURATION = 19000;
   const FLASH_BUILDUP = 4000;
 
-  const outpostAudio = new Audio("/audio/outpost.mp3");
-  outpostAudio.loop = true;
-  outpostAudio.volume = 0;
-
   const flashBuildupTimer = setTimeout(() => {
     // Fade out wormhole audio and flash to white
     flash.style.transition = `opacity ${FLASH_BUILDUP / 1000}s ease-in`;
     flash.style.opacity = "1";
     gsap.to(audio, { volume: 0, duration: FLASH_BUILDUP / 1000 });
-
-    // Crossfade into outpost audio
-    outpostAudio.play();
-    gsap.to(outpostAudio, { volume: 0.7, duration: FLASH_BUILDUP / 1000 });
   }, WORMHOLE_DURATION - FLASH_BUILDUP);
 
   await wormhole.animate();
@@ -130,11 +122,6 @@ async function onTransitionStart() {
 
   // 7. Dispose wormhole and load multiverse underneath while still white
   audio.pause();
-  gsap.to(outpostAudio, {
-    volume: 0,
-    duration: 1,
-    onComplete: () => outpostAudio.pause(),
-  });
   wormhole.dispose();
   sceneManager.setScene(multiverseScene);
 
@@ -240,14 +227,20 @@ init();
 //              ANIMATION LOOP
 // ============================================
 
-let lastTime = 0;
+let lastTime = null;
 
-function animate(timestamp) {
+function animate(timestamp = 0) {
   requestAnimationFrame(animate);
 
+  // On the first frame, seed lastTime so deltaTime starts at 0
+  if (lastTime === null) lastTime = timestamp;
+
   const time = timestamp / 1000;
-  const deltaTime = time - lastTime;
-  lastTime = time;
+  const lastTimeSec = lastTime / 1000;
+
+  // Cap at 50ms to prevent FlyControls from exploding after a tab switch or slow load
+  const deltaTime = Math.min(time - lastTimeSec, 0.05);
+  lastTime = timestamp;
 
   controls.update(deltaTime);
 

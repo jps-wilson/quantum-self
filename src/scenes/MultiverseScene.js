@@ -273,20 +273,26 @@ export class MultiverseScene {
 
     this.ambientAudio = new Audio("/audio/ambient-soundscape.mp3");
     this.ambientAudio.loop = true;
-    this.ambientAudio.volume = 0.35;
+    this.ambientAudio.volume = 0;
 
     // Browser autoplay policy: audio can only start after a user gesture.
     // Try immediately (works after wormhole click), fall back to next click.
     this._startAudio = () => {
       if (this.ambientAudio) {
-        this.ambientAudio.play().catch((e) => console.warn("Audio error:", e));
+        this.ambientAudio.play()
+          .then(() => gsap.to(this.ambientAudio, { volume: 0.35, duration: 4 }))
+          .catch((e) => console.warn("Audio error:", e));
       }
     };
 
     this.ambientAudio
       .play()
+      .then(() => {
+        // Autoplay succeeded — fade in over 4 seconds
+        gsap.to(this.ambientAudio, { volume: 0.35, duration: 4 });
+      })
       .catch(() => {
-        // Blocked — play on next user click
+        // Blocked — play and fade in on next user click
         window.addEventListener("pointerdown", this._startAudio, {
           once: true,
         });
