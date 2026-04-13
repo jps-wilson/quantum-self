@@ -48,7 +48,7 @@ export class MultiverseScene {
 
     const bloom = new UnrealBloomPass(
       new THREE.Vector2(window.innerWidth, window.innerHeight),
-      1.2, // strength - how intense the glow
+      0.6, // strength - how intense the glow
       0.8, // radius - how far it spreads
       0.1, // threshold - only pixels brighter than this bloom
     );
@@ -170,7 +170,7 @@ export class MultiverseScene {
 
     // Connector filling the space between all three bubbles
     const connector = this._createBlob([1, 1, -8], 8);
-    connector.scale.set(1.6, 1.0, 1.0);
+    connector.scale.set(1.2, 0.8, 0.8);
 
     bubbleData.forEach((b) => {
       const group = this._createBubble(b.pos, b.radius, b.core, b.halo);
@@ -210,7 +210,7 @@ export class MultiverseScene {
     this.lights.push(ambient);
 
     // Main violet fill - above the cluster
-    const violet = new THREE.PointLight(0x6622ff, 800, 120);
+    const violet = new THREE.PointLight(0x6622ff, 300, 120);
     violet.position.set(-10, 20, 10);
     this.scene.add(violet);
     this.lights.push(violet);
