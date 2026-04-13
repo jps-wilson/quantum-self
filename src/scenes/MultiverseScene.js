@@ -48,7 +48,7 @@ export class MultiverseScene {
 
     const bloom = new UnrealBloomPass(
       new THREE.Vector2(window.innerWidth, window.innerHeight),
-      0.6, // strength - how intense the glow
+      0.4, // strength - how intense the glow
       0.8, // radius - how far it spreads
       0.3, // threshold - only pixels brighter than this bloom
     );
@@ -210,7 +210,7 @@ export class MultiverseScene {
     this.lights.push(ambient);
 
     // Main violet fill - above the cluster
-    const violet = new THREE.PointLight(0x6622ff, 150, 120);
+    const violet = new THREE.PointLight(0x6622ff, 80, 120);
     violet.position.set(-10, 20, 10);
     this.scene.add(violet);
     this.lights.push(violet);
@@ -454,8 +454,8 @@ export class MultiverseScene {
     group.add(new THREE.Mesh(coreGeo, coreMat));
 
     // Glow halos
-    const haloSizes = [0.15, 0.25, 0.4, 0.6].map((s) => outerRadius * s);
-    const haloOpacities = [0.2, 0.12, 0.06, 0.02];
+    const haloSizes = [0.15, 0.4].map((s) => outerRadius * s);
+    const haloOpacities = [0.06, 0.02];
     haloSizes.forEach((size, i) => {
       const hGeo = new THREE.SphereGeometry(size, 32, 32);
       const hMat = new THREE.MeshBasicMaterial({
@@ -481,8 +481,8 @@ export class MultiverseScene {
     const originalPositions = posAttr.array.slice();
 
     const mat = new THREE.MeshPhysicalMaterial({
-      color: 0xffffff,
-      transmission: 0.3,
+      color: 0xaaaaaf, // slight blue tint deflects the harshest white
+      transmission: 0.1,
       roughness: 0.0,
       metalness: 0,
       iridescence: 0.8,
