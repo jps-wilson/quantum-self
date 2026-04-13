@@ -85,7 +85,9 @@ export class MultiverseScene {
       { pos: [1, 2, -6], radius: 1.8, core: 0xddaaff, halo: 0x8833ff }, // small, far back bubble
     ];
 
-    this._createBlob([0.5, -0.5, -1]);
+    // Connector filling the space between all three bubbles
+    const connector = this._createBlob([0.7, 0.8, -3], 3);
+    connector.scale.set(2.2, 1.5, 1.5);
 
     bubbleData.forEach((b) => {
       const group = this._createBubble(b.pos, b.radius, b.core, b.halo);
@@ -158,8 +160,9 @@ export class MultiverseScene {
         const oy = original[i * 3 + 1];
         const oz = original[i * 3 + 2];
 
+        const r = Math.sqrt(ox * ox + oy * oy + oz * oz) || 1;
         const angle = Math.atan2(oy, ox);
-        const elevation = Math.asin(Math.max(-1, Math.min(1, oz / 2)));
+        const elevation = Math.asin(Math.max(-1, Math.min(1, oz / r)));
         const wave =
           Math.sin(angle * 3 + time * 0.8) *
           Math.cos(elevation * 2 + time * 0.5);
@@ -242,22 +245,22 @@ export class MultiverseScene {
     return group;
   }
 
-  _createBlob(position) {
-    const geo = new THREE.SphereGeometry(2, 48, 48);
+  _createBlob(position, radius = 2) {
+    const geo = new THREE.SphereGeometry(radius, 48, 48);
 
     // Store the original vertex positions BEFORE any deformation
     const posAttr = geo.getAttribute("position");
     const originalPositions = posAttr.array.slice();
 
     const mat = new THREE.MeshPhysicalMaterial({
-      color: 0x7744bb,
-      transmission: 0.6,
-      roughness: 0.1,
+      color: 0xffffff,
+      transmission: 0.85,
+      roughness: 0.05,
       metalness: 0,
       iridescence: 0.8,
       iridescenceThicknessRange: [100, 300],
       transparent: true,
-      opacity: 0.4,
+      opacity: 0.2,
       side: THREE.DoubleSide,
       envMap: this.envMap,
     });
@@ -268,5 +271,7 @@ export class MultiverseScene {
 
     this.blobs.push(mesh);
     this.blobOriginalPositions.push(originalPositions);
+
+    return mesh;
   }
 }
