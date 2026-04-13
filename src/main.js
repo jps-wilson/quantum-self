@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/Addons.js";
+import { FlyControls } from "three/examples/jsm/Addons.js";
 import { gsap } from "gsap";
 import { SCENE_CONFIG, MODELS } from "./config/constants.js";
 import { loadModel } from "./utils/modelLoader.js";
@@ -34,10 +34,18 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.2;
 document.getElementById("three-container").appendChild(renderer.domElement);
 
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.dampingFactor = SCENE_CONFIG.controls.dampingFactor;
-controls.target.set(...SCENE_CONFIG.controls.target);
+const controls = new FlyControls(camera, renderer.domElement);
+controls.movementSpeed = 10;
+controls.rollSpeed = 0.5;
+controls.dragToLook = true; // hold mouse button to look, rather than auto-looking
+
+/**
+ * --- HOW FLYCONTROLS WORKS ---
+ * W/S - move forward/back
+ * A/D - move left/right
+ * R/F - move up/down
+ * Hold and drag mouse - look around
+ */
 
 // ============================================
 //                LIGHTING
@@ -241,7 +249,7 @@ function animate(timestamp) {
   const deltaTime = time - lastTime;
   lastTime = time;
 
-  controls.update();
+  controls.update(deltaTime);
 
   // Update wormhole camera movement if active
   wormhole.update(camera);

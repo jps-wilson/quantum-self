@@ -264,11 +264,7 @@ export class MultiverseScene {
 
     // Position camera
     this.camera.position.set(0, 0, 45);
-    this.controls.target.set(0, 0, 0);
-    this.controls.enablePan = true;
-    this.controls.minDistance = 0.5;
-    this.controls.maxDistance = 200;
-    this.controls.update();
+    this.camera.lookAt(0, 0, 0);
 
     // Window resize for bloom effect
     this._onResize = () => {
