@@ -411,4 +411,34 @@ export class MultiverseScene {
 
     return mesh;
   }
+
+  _createMicroBubble(position, radius) {
+    const group = new THREE.Group();
+
+    // Core glow
+    const coreGeo = new THREE.SphereGeometry(radius, 16, 16);
+    const coreMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    group.add(new THREE.Mesh(coreGeo, coreMat));
+
+    // Two halo layers
+    const haloSizes = [1.8, 3.0].map((s) => radius * s);
+    const haloColors = [0x8833ff, 0x4422ff];
+    const haloOpacity = [0.15, 0.06];
+    haloSizes.forEach((size, i) => {
+      const hGeo = new THREE.SphereGeometry(size, 16, 16);
+      const hMat = new THREE.MeshBasicMaterial({
+        color: haloColors[i],
+        transparent: true,
+        opacity: haloOpacity[i],
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.BackSide,
+      });
+      group.add(new THREE.Mesh(hGeo, hMat));
+    });
+
+    group.position.set(...position);
+    this.scene.add(group);
+    this.microBubbles.push(group);
+  }
 }
