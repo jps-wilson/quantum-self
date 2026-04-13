@@ -22,7 +22,7 @@ export class MultiverseScene {
     this.controls = controls;
 
     this.originalBackground = null;
-    // Add more instance properties here as you build each step
+    this.stars = null;
   }
 
   async init() {
@@ -37,7 +37,40 @@ export class MultiverseScene {
     this.scene.background = new THREE.Color(0x05030f);
     this.scene.fog = new THREE.FogExp2(0x05030f, 0.018);
 
-    // Step 2: create star field here
+    const count = 4000;
+    const geo = new THREE.BufferGeometry();
+    const positions = new Float32Array(count * 3);
+
+    for (let i = 0; i < count; i++) {
+      // random point inside a sphere of radius 80
+      // rejection sampling: keep only points within the sphere
+      let x, y, z;
+      do {
+        x = (Math.random() - 0.5) * 160;
+        y = (Math.random() - 0.5) * 160;
+        z = (Math.random() - 0.5) * 160;
+      } while (Math.sqrt(x * x + y * y + z * z) > 80);
+
+      positions[i * 3] = x;
+      positions[i * 3 + 1] = y;
+      positions[i * 3 + 2] = z;
+    }
+
+    geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+
+    const mat = new THREE.PointsMaterial({
+      color: 0xaaaaff,
+      size: 0.15,
+      sizeAttenuation: true,
+      map: this._makeStarTexture(),
+      transparent: true,
+      alphaTest: 0.01, // discards pixels below 1% opacity - kills the square edge
+      depthWrite: false,
+    });
+
+    this.starTexture = mat.map;
+    this.stars = new THREE.Points(geo, mat);
+    this.scene.add(this.stars);
 
     // Step 3–5: create bubble(s) here
 
@@ -56,14 +89,46 @@ export class MultiverseScene {
     this.scene.background = this.originalBackground;
     this.scene.fog = null;
 
+    if (this.stars) {
+      this.stars.geometry.dispose();
+      this.stars.material.dispose();
+      this.scene.remove(this.stars);
+      this.stars = null;
+    }
+
+    if (this.starTexture) {
+      this.starTexture.dispose();
+      this.starTexture = null;
+    }
+
     // Dispose geometries, materials, and remove meshes here as you add them
     // Pattern: this.mesh.geometry.dispose(); this.mesh.material.dispose(); this.scene.remove(this.mesh)
   }
 
   update(time) {
     // Called every frame — time is in seconds
-    // Step 2: rotate star field here
+    if (this.stars) {
+      this.stars.rotation.y = time * 0.01;
+    }
     // Step 6: vertex displacement loop here
     // Step 8: per-frame opacity/rotation animation here
+  }
+
+  _makeStarTexture() {
+    const canvas = document.createElement("canvas");
+    canvas.width = 32;
+    canvas.height = 32;
+    const ctx = canvas.getContext("2d");
+
+    // radial gradient: white center, fully transparent at edges
+    const gradient = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+    gradient.addColorStop(0, "rgba(255, 255, 255, 1)");
+    gradient.addColorStop(0.3, "rgba(255, 255, 255, 0.6)");
+    gradient.addColorStop(1, "rgba(255, 255, 255, 0)");
+
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 32, 32);
+
+    return new THREE.CanvasTexture(canvas);
   }
 }
