@@ -2,12 +2,13 @@ import * as THREE from "three";
 import { FlyControls } from "three/examples/jsm/Addons.js";
 import { gsap } from "gsap";
 import { SCENE_CONFIG, MODELS } from "./config/constants.js";
-import { loadModel } from "./utils/modelLoader.js";
-import { Wormhole } from "./utils/wormhole.js";
-import { DeskScene } from "./scenes/DeskScene.js";
-import { MultiverseScene } from "./scenes/MultiverseScene.js";
 import { SceneManager } from "./scenes/SceneManager.js";
+import { WelcomeScreen } from "./WelcomeScreen.js";
+import { loadModel } from "./utils/modelLoader.js";
 import { Terminal } from "./terminal/Terminal.js";
+import { DeskScene } from "./scenes/DeskScene.js";
+import { Wormhole } from "./utils/wormhole.js";
+import { MultiverseScene } from "./scenes/MultiverseScene.js";
 
 // ============================================
 //              CORE SETUP
@@ -159,7 +160,11 @@ deskScene.onTerminalOpen = () => {
 // ============================================
 
 async function init() {
-  console.log("⏳ Loading assets...");
+  // Show welcome screen and wait for user to dismiss it
+  const welcomeScreen = new WelcomeScreen();
+  await welcomeScreen.show();
+
+  console.log("Loading assets...");
 
   // Load light fixture model and attach the point light to it
   const lightModel = await loadModel(
