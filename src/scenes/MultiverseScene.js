@@ -45,7 +45,7 @@ export class MultiverseScene {
     this.originalBackground = this.scene.background;
 
     this.scene.background = new THREE.Color(0x05030f);
-    this.scene.fog = new THREE.FogExp2(0x05030f, 0.018);
+    this.scene.fog = new THREE.FogExp2(0x05030f, 0.006);
     this.scene.environment = this.envMap;
 
     const count = 4000;
@@ -90,23 +90,18 @@ export class MultiverseScene {
 
     // Cloud centres - loosely placed around the bubble cluster
     const cloudCentres = [
-      // Deep background
-      [-12, 5, -25],
-      [8, 8, -30],
-      [-3, -6, -22],
-      [14, -3, -28],
-      [-8, 10, -35],
-
-      // Wide sides
-      [-20, 2, -10],
-      [18, -4, -12],
-      [-15, -5, -18],
-      [16, 6, -20],
-
-      // Above and below
-      [2, 15, -15],
-      [-4, -12, -18],
-      [8, 12, -25],
+      [-30, 10, -60],
+      [25, 15, -80],
+      [-8, -15, -55],
+      [40, -8, -70],
+      [-20, -12, -45],
+      [50, 10, -50],
+      [-5, 25, -65],
+      [8, -22, -75],
+      [-40, 5, -40],
+      [30, 18, -90],
+      [-2, 30, -50],
+      [10, -28, -60],
     ];
 
     for (let i = 0; i < nebulaCount; i++) {
@@ -152,13 +147,13 @@ export class MultiverseScene {
     this.bubbles = [];
 
     const bubbleData = [
-      { pos: [-3, 0, 0], radius: 5, core: 0xffcc88, halo: 0x6611ff }, // large left bubble
-      { pos: [4, 0.5, -2], radius: 3.5, core: 0xffeedd, halo: 0x4422ff }, // medium right bubble
-      { pos: [1, 2, -6], radius: 1.8, core: 0xddaaff, halo: 0x8833ff }, // small, far back bubble
+      { pos: [-8, 0, 0], radius: 14, core: 0xffcc88, halo: 0x6611ff }, // large left bubble
+      { pos: [10, 1, -5], radius: 10, core: 0xffeedd, halo: 0x4422ff }, // medium right bubble
+      { pos: [3, 4, -18], radius: 6, core: 0xddaaff, halo: 0x8833ff }, // small, far back bubble
     ];
 
     // Connector filling the space between all three bubbles
-    const connector = this._createBlob([0.7, 0.8, -3], 3);
+    const connector = this._createBlob([1, 1, -8], 8);
     connector.scale.set(2.2, 1.5, 1.5);
 
     bubbleData.forEach((b) => {
@@ -168,14 +163,14 @@ export class MultiverseScene {
     });
 
     // Micro-bubbles scattered around the cluster
-    this._createMicroBubble([-7, 3, -4], 0.18);
-    this._createMicroBubble([7, -1, -5], 0.22);
-    this._createMicroBubble([-2, 5, -8], 0.15);
-    this._createMicroBubble([3, -4, -3], 0.2);
-    this._createMicroBubble([-5, -3, -6], 0.12);
-    this._createMicroBubble([1, 4, -2], 0.16);
-    this._createMicroBubble([-8, 0, -2], 0.25);
-    this._createMicroBubble([5, 3, -7], 0.14);
+    this._createMicroBubble([-20,  6, -12], 1.2);
+    this._createMicroBubble([ 22, -4, -15], 0.9);
+    this._createMicroBubble([ -6, 14, -20], 1.5);
+    this._createMicroBubble([ 18, -10, -8], 0.7);
+    this._createMicroBubble([-16,  -8, -18], 1.0);
+    this._createMicroBubble([  4,  18, -10], 0.8);
+    this._createMicroBubble([-24,   2,  -8], 1.3);
+    this._createMicroBubble([ 14,  10, -22], 0.6);
 
     // Suppress the global desk scene ambient while in multiverse
     this.scene.traverse((obj) => {
@@ -240,10 +235,11 @@ export class MultiverseScene {
     }
 
     // Position camera
-    this.camera.position.set(0, 0, 28);
+    this.camera.position.set(0, 0, 45);
     this.controls.target.set(0, 0, 0);
-    this.controls.enabled = true;
-    this.controls.update();
+    this.controls.enablePan = true;
+    this.controls.minDistance = 0.5; // lets you go right inside
+    this.controls.maxDistance = 200;
   }
 
   exit() {
@@ -392,9 +388,9 @@ export class MultiverseScene {
     // Outer shell
     const bubbleGeo = new THREE.SphereGeometry(outerRadius, 64, 64);
     const bubbleMat = new THREE.MeshPhysicalMaterial({
-      color: 0x8888ff,
+      color: 0xffffff,
       transmission: 0.95,
-      thickness: 0.4,
+      thickness: 1.2,
       roughness: 0.05,
       metalness: 0,
       ior: 1.35,
@@ -402,20 +398,20 @@ export class MultiverseScene {
       iridescenceIOR: 1.3,
       iridescenceThicknessRange: [100, 400],
       transparent: true,
-      opacity: 0.45,
+      opacity: 0.25,
       side: THREE.DoubleSide,
       envMap: this.envMap,
     });
     group.add(new THREE.Mesh(bubbleGeo, bubbleMat));
 
     // Inner core
-    const coreGeo = new THREE.SphereGeometry(outerRadius * 0.2, 32, 32);
+    const coreGeo = new THREE.SphereGeometry(outerRadius * 0.05, 16, 16);
     const coreMat = new THREE.MeshBasicMaterial({ color: coreColor });
     group.add(new THREE.Mesh(coreGeo, coreMat));
 
     // Glow halos
-    const haloSizes = [0.3, 0.45, 0.65].map((s) => outerRadius * s);
-    const haloOpacities = [0.12, 0.07, 0.03];
+    const haloSizes = [0.15, 0.25, 0.4, 0.6].map((s) => outerRadius * s);
+    const haloOpacities = [0.2, 0.12, 0.06, 0.02];
     haloSizes.forEach((size, i) => {
       const hGeo = new THREE.SphereGeometry(size, 32, 32);
       const hMat = new THREE.MeshBasicMaterial({
