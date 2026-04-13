@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import { RoomEnvironment } from "three/examples/jsm/Addons.js";
 
 /**
  * Multiverse Scene
@@ -31,9 +30,15 @@ export class MultiverseScene {
   async init() {
     // Called once at app startup — put expensive async setup here
     // (e.g. loading environment maps, textures)
+    const texture = await new THREE.TextureLoader().loadAsync(
+      "/textures/multiverse.png",
+    );
+    texture.mapping = THREE.EquirectangularReflectionMapping;
+
     const pmrem = new THREE.PMREMGenerator(this.renderer);
-    this.envMap = pmrem.fromScene(new RoomEnvironment()).texture;
+    this.envMap = pmrem.fromEquirectangular(texture).texture;
     pmrem.dispose();
+    texture.dispose();
   }
 
   enter() {
