@@ -154,7 +154,7 @@ export class MultiverseScene {
 
     // Connector filling the space between all three bubbles
     const connector = this._createBlob([1, 1, -8], 8);
-    connector.scale.set(2.2, 1.5, 1.5);
+    connector.scale.set(1.6, 1.0, 1.0);
 
     bubbleData.forEach((b) => {
       const group = this._createBubble(b.pos, b.radius, b.core, b.halo);
@@ -182,6 +182,12 @@ export class MultiverseScene {
 
     this.lights = [];
 
+    // Directional light
+    const dirLight = new THREE.DirectionalLight(0xffffff, 2);
+    dirLight.position.set(5, 10, 10);
+    this.scene.add(dirLight);
+    this.lights.push(dirLight);
+
     // Deep purple ambient - keeps shadows from being pure black
     const ambient = new THREE.AmbientLight(0x1a0a2e, 6);
     this.scene.add(ambient);
@@ -194,7 +200,7 @@ export class MultiverseScene {
     this.lights.push(violet);
 
     // Golden accent - off to the right, matches the warm cores
-    const gold = new THREE.PointLight(0xffaa44, 600, 100);
+    const gold = new THREE.PointLight(0xffaa44, 80, 70);
     gold.position.set(18, 8, 10);
     this.scene.add(gold);
     this.lights.push(gold);
@@ -244,8 +250,9 @@ export class MultiverseScene {
     this.camera.position.set(0, 0, 45);
     this.controls.target.set(0, 0, 0);
     this.controls.enablePan = true;
-    this.controls.minDistance = 0.5; // lets you go right inside
+    this.controls.minDistance = 0.5;
     this.controls.maxDistance = 200;
+    this.controls.update();
   }
 
   exit() {
@@ -395,16 +402,16 @@ export class MultiverseScene {
     const bubbleGeo = new THREE.SphereGeometry(outerRadius, 64, 64);
     const bubbleMat = new THREE.MeshPhysicalMaterial({
       color: 0xffffff,
-      transmission: 0.95,
+      transmission: 0.7,
       thickness: 1.2,
       roughness: 0.05,
       metalness: 0,
       ior: 1.35,
       iridescence: 1.0,
-      iridescenceThicknessRange: [200, 800],
+      iridescenceThicknessRange: [100, 1000],
       iridescenceIOR: 1.5,
       transparent: true,
-      opacity: 0.25,
+      opacity: 0.4,
       side: THREE.DoubleSide,
       envMap: this.envMap,
     });
@@ -445,12 +452,12 @@ export class MultiverseScene {
     const mat = new THREE.MeshPhysicalMaterial({
       color: 0xffffff,
       transmission: 0.85,
-      roughness: 0.05,
+      roughness: 0.0,
       metalness: 0,
       iridescence: 0.8,
       iridescenceThicknessRange: [100, 300],
       transparent: true,
-      opacity: 0.2,
+      opacity: 0.1,
       side: THREE.DoubleSide,
       envMap: this.envMap,
     });
