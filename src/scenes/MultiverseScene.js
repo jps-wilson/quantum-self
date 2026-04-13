@@ -1,5 +1,8 @@
 import * as THREE from "three";
 import gsap from "gsap";
+import { EffectComposer } from "three/examples/jsm/Addons.js";
+import { RenderPass } from "three/examples/jsm/Addons.js";
+import { UnrealBloomPass } from "three/examples/jsm/Addons.js";
 
 /**
  * Multiverse Scene
@@ -38,6 +41,19 @@ export class MultiverseScene {
     this.envMap = pmrem.fromEquirectangular(texture).texture;
     pmrem.dispose();
     texture.dispose();
+
+    // Post-processing bloom
+    this.composer = new EffectComposer(this.renderer);
+    this.composer.addPass(new RenderPass(this.scene, this.camera));
+
+    const bloom = new UnrealBloomPass(
+      new THREE.Vector2(window.innerWidth, window.innerHeight),
+      1.2, // strength - how intense the glow
+      0.8, // radius - how far it spreads
+      0.1, // threshold - only pixels brighter than this bloom
+    );
+    this.composer.addPass(bloom);
+    this.bloom = bloom;
   }
 
   enter() {
@@ -253,6 +269,12 @@ export class MultiverseScene {
     this.controls.minDistance = 0.5;
     this.controls.maxDistance = 200;
     this.controls.update();
+
+    // Window resize for bloom effect
+    this._onResize = () => {
+      this.composer.setSize(window.innerWidth, window.innerHeight);
+    };
+    window.addEventListener("resize", this._onResize);
   }
 
   exit() {
@@ -333,6 +355,8 @@ export class MultiverseScene {
       this.scene.remove(group);
     });
     this.microBubbles = [];
+
+    window.removeEventListener("resize", this._onResize);
   }
 
   update(time) {
@@ -375,6 +399,10 @@ export class MultiverseScene {
       this.nebula.rotation.y = time * 0.004;
       this.nebula.rotation.x = time * 0.002;
     }
+  }
+
+  render() {
+    this.composer.render();
   }
 
   _makeStarTexture() {
