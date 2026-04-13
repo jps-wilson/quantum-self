@@ -135,7 +135,11 @@ export class Terminal {
       if (!this.phase || this.phase === "boot" || this.phase === "transition")
         return;
 
-      if (event.key.length === 1 || event.key === "Backspace" || event.key === "Enter") {
+      if (
+        event.key.length === 1 ||
+        event.key === "Backspace" ||
+        event.key === "Enter"
+      ) {
         this.keypressSound.currentTime = 0;
         this.keypressSound.play().catch(() => {});
       }
@@ -179,8 +183,9 @@ export class Terminal {
         this._addLine("Initializing quantum engine...", "amber");
         this._addLine("Loading multiverse...", "white");
         this._addLine("Calibrating reality branches...", "white");
+        this._addLine("Mapping identity across infinite realities...", "white");
         this._addLine("", "white");
-        this._addLine("Entering the void...", "amber");
+        this._addLine("Entering the multiverse...", "amber");
         this._hideInput();
         this.phase = "transition";
 
@@ -188,6 +193,49 @@ export class Terminal {
         if (this.onTransitionStart) {
           this.onTransitionStart();
         }
+      } else if (command === "help") {
+        this._addLine("", "white");
+        this._addLine("Available commands:", "amber");
+        this._addLine(
+          "  start     — begin your journey into the multiverse",
+          "white",
+        );
+        this._addLine("  whoami    — identify your quantum self", "white");
+        this._addLine("  ls        — list local reality files", "white");
+        this._addLine("  help      — show this message", "white");
+        this._addLine("", "white");
+        this._addLine("Navigation (once inside):", "amber");
+        this._addLine("  W / S           move forward & back", "white");
+        this._addLine("  A / D           move left & right", "white");
+        this._addLine("  R / F           ascend & descend", "white");
+        this._addLine("  HOLD + DRAG     look around", "white");
+        this._addLine("", "white");
+      } else if (command === "whoami") {
+        this._addLine("", "white");
+        this._addLine(`User: ${this.username}`, "amber");
+        this._addLine("Origin: unknown", "white");
+        this._addLine(
+          "Quantum signature: " +
+            Math.random().toString(36).substring(2, 10).toUpperCase(),
+          "white",
+        );
+        this._addLine(
+          "Reality branches detected: " +
+            Math.floor(Math.random() * 9000 + 1000),
+          "white",
+        );
+        this._addLine("Status: INFINITE", "amber");
+        this._addLine("", "white");
+      } else if (command === "ls") {
+        this._addLine("", "white");
+        this._addLine("total 7", "white");
+        this._addLine("drwxr-xr-x  self_v1.dat", "white");
+        this._addLine("drwxr-xr-x  reality_branch_map.json", "white");
+        this._addLine("-rw-r--r--  identity_core.sys", "white");
+        this._addLine("-rw-r--r--  parallel_selves.log", "white");
+        this._addLine("-rw-------  quantum_signature.key", "white");
+        this._addLine("drwxr-xr-x  multiverse/", "amber");
+        this._addLine("", "white");
       } else if (command === "") {
         // Empty enter — just show new prompt
       } else {
