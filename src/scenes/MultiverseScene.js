@@ -18,6 +18,7 @@ export class MultiverseScene {
     this.bubbles = [];
     this.blobs = [];
     this.blobOriginalPositions = [];
+    this.lights = [];
   }
 
   async init() {
@@ -95,7 +96,38 @@ export class MultiverseScene {
       this.bubbles.push(group);
     });
 
-    // Step 7: add lights here
+    // Suppress the global desk scene ambient while in multiverse
+    this.scene.traverse((obj) => {
+      if (obj.isAmbientLight && !this.lights.includes(obj)) {
+        obj.userData._prevIntensity = obj.intensity;
+        obj.intensity = 0;
+      }
+    });
+
+    this.lights = [];
+
+    // Deep purple ambient - keeps shadows from being pure black
+    const ambient = new THREE.AmbientLight(0x1a0a2e, 3);
+    this.scene.add(ambient);
+    this.lights.push(ambient);
+
+    // Main violet fill - above the cluster
+    const violet = new THREE.PointLight(0x6622ff, 200, 60);
+    violet.position.set(0, 8, 5);
+    this.scene.add(violet);
+    this.lights.push(violet);
+
+    // Golden accent - off to the right, matches the warm cores
+    const gold = new THREE.PointLight(0xffaa44, 150, 50);
+    gold.position.set(8, 2, 3);
+    this.scene.add(gold);
+    this.lights.push(gold);
+
+    // Cold blue underlight - gives depth from below
+    const blue = new THREE.PointLight(0x0033ff, 100, 40);
+    blue.position.set(-4, -6, 2);
+    this.scene.add(blue);
+    this.lights.push(blue);
 
     // Position camera
     this.camera.position.set(0, 0, 28);
@@ -144,6 +176,19 @@ export class MultiverseScene {
     });
     this.blobs = [];
     this.blobOriginalPositions = [];
+
+    this.lights.forEach((light) => {
+      this.scene.remove(light);
+    });
+    this.lights = [];
+
+    // Restore global ambient
+    this.scene.traverse((obj) => {
+      if (obj.isAmbientLight && obj.userData._prevIntensity !== undefined) {
+        obj.intensity = obj.userData._prevIntensity;
+        delete obj.userData._prevIntensity;
+      }
+    });
   }
 
   update(time) {
