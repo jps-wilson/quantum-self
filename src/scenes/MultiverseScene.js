@@ -425,12 +425,6 @@ export class MultiverseScene {
       bubble.rotation.x = time * (0.02 + i * 0.005);
     });
 
-    // Gentle idle drift when user isn't actively flying
-    const driftX = Math.sin(time * 0.08) * 0.003;
-    const driftY = Math.cos(time * 0.05) * 0.002;
-    this.camera.position.x += driftX;
-    this.camera.position.y += driftY;
-
     if (this.stars) {
       this.stars.position.copy(this.camera.position);
       this.stars.rotation.y = time * 0.01;

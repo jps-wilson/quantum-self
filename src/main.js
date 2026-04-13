@@ -5,7 +5,6 @@ import { SCENE_CONFIG, MODELS } from "./config/constants.js";
 import { loadModel } from "./utils/modelLoader.js";
 import { Wormhole } from "./utils/wormhole.js";
 import { DeskScene } from "./scenes/DeskScene.js";
-import { VoidScene } from "./scenes/VoidScene.js";
 import { MultiverseScene } from "./scenes/MultiverseScene.js";
 import { SceneManager } from "./scenes/SceneManager.js";
 import { Terminal } from "./terminal/Terminal.js";
@@ -69,7 +68,6 @@ bulbLight.castShadow = true;
 // ============================================
 
 const wormhole = new Wormhole(scene);
-let voidScene = null;
 let multiverseScene = null;
 
 const computerHum = new Audio("/audio/pulse.mp3");
@@ -78,7 +76,7 @@ computerHum.volume = 1;
 
 // Transition callback: triggered when user types "start"
 async function onTransitionStart() {
-  console.log("🌀 Starting wormhole transition...");
+  console.log("Starting wormhole transition...");
 
   // 1. Fade out terminal and computer hum together (1 second), then hide terminal
   terminal.fadeOut(1000);
@@ -130,8 +128,13 @@ async function onTransitionStart() {
   await wormhole.animate();
   clearTimeout(flashBuildupTimer);
 
-  // 7. Dispose wormhole and load void scene underneath while still white
+  // 7. Dispose wormhole and load multiverse underneath while still white
   audio.pause();
+  gsap.to(outpostAudio, {
+    volume: 0,
+    duration: 1,
+    onComplete: () => outpostAudio.pause(),
+  });
   wormhole.dispose();
   sceneManager.setScene(multiverseScene);
 
@@ -142,7 +145,7 @@ async function onTransitionStart() {
     setTimeout(resolve, 2000);
   });
 
-  console.log("✅ Wormhole transition complete");
+  console.log("Wormhole transition complete");
 }
 
 function hideDeskScene() {
@@ -210,19 +213,15 @@ async function init() {
   // Generate wormhole geometry
   wormhole.generate();
 
-  // Create void scene
-  voidScene = new VoidScene(scene, camera, controls, renderer);
-  await voidScene.init();
-
   // Create multiverse scene
   multiverseScene = new MultiverseScene(scene, camera, controls, renderer);
   await multiverseScene.init();
 
-  // DEV BYPASS: skip terminal/desk and jump straight to multiverse
-  terminal.hide();
-  hideDeskScene();
-  sceneManager.setScene(multiverseScene);
-  // sceneManager.setScene(deskScene); // ← restore to re-enable normal flow
+  // *DEV BYPASS: skip terminal/desk and jump straight to multiverse
+  // *terminal.hide();
+  // *hideDeskScene();
+  // *sceneManager.setScene(multiverseScene);
+  sceneManager.setScene(deskScene); // ← restore to re-enable normal flow
 
   // Start computer hum on first user interaction (autoplay policy)
   const startHum = () => {
@@ -231,8 +230,8 @@ async function init() {
   };
   window.addEventListener("pointerdown", startHum);
 
-  console.log("✅ All assets loaded - ready to start!");
-  console.log("💡 Click the monitor to begin");
+  console.log("All assets loaded - ready to start!");
+  console.log("Click the monitor to begin");
 }
 
 init();
