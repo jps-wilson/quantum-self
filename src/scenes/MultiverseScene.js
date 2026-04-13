@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import gsap from "gsap";
 
 /**
  * Multiverse Scene
@@ -19,6 +20,8 @@ export class MultiverseScene {
     this.blobs = [];
     this.blobOriginalPositions = [];
     this.lights = [];
+
+    this.tweens = [];
   }
 
   async init() {
@@ -129,6 +132,35 @@ export class MultiverseScene {
     this.scene.add(blue);
     this.lights.push(blue);
 
+    // Breathing animation for each bubble
+    this.bubbles.forEach((bubble, i) => {
+      const tween = gsap.to(bubble.scale, {
+        x: 1.06,
+        y: 1.06,
+        z: 1.06,
+        duration: 3 + i * 0.8,
+        ease: "sine.inOut",
+        yoyo: true,
+        repeat: -1,
+        delay: i * 0.5,
+      });
+      this.tweens.push(tween);
+    });
+
+    // Slower breathing on the connector blob
+    if (this.blobs[0]) {
+      const blobTween = gsap.to(this.blobs[0].scale, {
+        x: 2.5,
+        y: 1.6,
+        z: 1.6,
+        duration: 5,
+        ease: "sine.inOut",
+        yoyo: true,
+        repeat: -1,
+      });
+      this.tweens.push(blobTween);
+    }
+
     // Position camera
     this.camera.position.set(0, 0, 28);
     this.controls.target.set(0, 0, 0);
@@ -222,7 +254,10 @@ export class MultiverseScene {
       blob.geometry.computeVertexNormals();
     });
 
-    // Step 8: per-frame opacity/rotation animation here
+    this.bubbles.forEach((bubble, i) => {
+      bubble.rotation.y = time * (0.04 + i * 0.01);
+      bubble.rotation.x = time * (0.02 + i * 0.005);
+    });
   }
 
   _makeStarTexture() {
