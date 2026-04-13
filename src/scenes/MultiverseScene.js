@@ -163,14 +163,14 @@ export class MultiverseScene {
     });
 
     // Micro-bubbles scattered around the cluster
-    this._createMicroBubble([-20,  6, -12], 1.2);
-    this._createMicroBubble([ 22, -4, -15], 0.9);
-    this._createMicroBubble([ -6, 14, -20], 1.5);
-    this._createMicroBubble([ 18, -10, -8], 0.7);
-    this._createMicroBubble([-16,  -8, -18], 1.0);
-    this._createMicroBubble([  4,  18, -10], 0.8);
-    this._createMicroBubble([-24,   2,  -8], 1.3);
-    this._createMicroBubble([ 14,  10, -22], 0.6);
+    this._createMicroBubble([-20, 6, -12], 1.2);
+    this._createMicroBubble([22, -4, -15], 0.9);
+    this._createMicroBubble([-6, 14, -20], 1.5);
+    this._createMicroBubble([18, -10, -8], 0.7);
+    this._createMicroBubble([-16, -8, -18], 1.0);
+    this._createMicroBubble([4, 18, -10], 0.8);
+    this._createMicroBubble([-24, 2, -8], 1.3);
+    this._createMicroBubble([14, 10, -22], 0.6);
 
     // Suppress the global desk scene ambient while in multiverse
     this.scene.traverse((obj) => {
@@ -188,19 +188,19 @@ export class MultiverseScene {
     this.lights.push(ambient);
 
     // Main violet fill - above the cluster
-    const violet = new THREE.PointLight(0x6622ff, 200, 60);
+    const violet = new THREE.PointLight(0x6622ff, 500, 80);
     violet.position.set(0, 8, 5);
     this.scene.add(violet);
     this.lights.push(violet);
 
     // Golden accent - off to the right, matches the warm cores
-    const gold = new THREE.PointLight(0xffaa44, 150, 50);
+    const gold = new THREE.PointLight(0xffaa44, 350, 70);
     gold.position.set(8, 2, 3);
     this.scene.add(gold);
     this.lights.push(gold);
 
     // Cold blue underlight - gives depth from below
-    const blue = new THREE.PointLight(0x0033ff, 100, 40);
+    const blue = new THREE.PointLight(0x0033ff, 250, 60);
     blue.position.set(-4, -6, 2);
     this.scene.add(blue);
     this.lights.push(blue);
@@ -464,13 +464,17 @@ export class MultiverseScene {
 
     // Core glow
     const coreGeo = new THREE.SphereGeometry(radius, 16, 16);
-    const coreMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const coreMat = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.6,
+    });
     group.add(new THREE.Mesh(coreGeo, coreMat));
 
     // Two halo layers
-    const haloSizes = [1.8, 3.0].map((s) => radius * s);
     const haloColors = [0x8833ff, 0x4422ff];
-    const haloOpacity = [0.15, 0.06];
+    const haloSizes = [3.0, 5.0].map((s) => radius * s);
+    const haloOpacity = [0.2, 0.08];
     haloSizes.forEach((size, i) => {
       const hGeo = new THREE.SphereGeometry(size, 16, 16);
       const hMat = new THREE.MeshBasicMaterial({
