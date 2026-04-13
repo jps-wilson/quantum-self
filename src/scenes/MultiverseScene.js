@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { RoomEnvironment } from "three/examples/jsm/Addons.js";
 
 /**
  * Multiverse Scene
@@ -16,18 +17,23 @@ import * as THREE from "three";
  *   Step 8  - Animation (update loop + GSAP breathing)
  */
 export class MultiverseScene {
-  constructor(scene, camera, controls) {
+  constructor(scene, camera, controls, renderer) {
     this.scene = scene;
     this.camera = camera;
     this.controls = controls;
+    this.renderer = renderer;
 
     this.originalBackground = null;
     this.stars = null;
+    this.bubble = null;
   }
 
   async init() {
     // Called once at app startup — put expensive async setup here
     // (e.g. loading environment maps, textures)
+    const pmrem = new THREE.PMREMGenerator(this.renderer);
+    this.envMap = pmrem.fromScene(new RoomEnvironment()).texture;
+    pmrem.dispose();
   }
 
   enter() {
@@ -72,7 +78,25 @@ export class MultiverseScene {
     this.stars = new THREE.Points(geo, mat);
     this.scene.add(this.stars);
 
-    // Step 3–5: create bubble(s) here
+    const bubbleGeo = new THREE.SphereGeometry(3, 64, 64);
+    const bubbleMat = new THREE.MeshPhysicalMaterial({
+      color: 0x8888ff,
+      transmission: 0.95,
+      thickness: 0.4,
+      roughness: 0.05,
+      metalness: 0,
+      ior: 1.35,
+      iridescence: 1.0,
+      iridescenceIOR: 1.3,
+      iridescenceThicknessRange: [100, 400],
+      transparent: true,
+      opacity: 0.3,
+      side: THREE.DoubleSide,
+      envMap: this.envMap,
+    });
+
+    this.bubble = new THREE.Mesh(bubbleGeo, bubbleMat);
+    this.scene.add(this.bubble);
 
     // Step 7: add lights here
 
@@ -99,6 +123,13 @@ export class MultiverseScene {
     if (this.starTexture) {
       this.starTexture.dispose();
       this.starTexture = null;
+    }
+
+    if (this.bubble) {
+      this.bubble.geometry.dispose();
+      this.bubble.material.dispose();
+      this.scene.remove(this.bubble);
+      this.bubble = null;
     }
 
     // Dispose geometries, materials, and remove meshes here as you add them

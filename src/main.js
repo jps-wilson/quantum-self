@@ -202,11 +202,11 @@ async function init() {
   wormhole.generate();
 
   // Create void scene
-  voidScene = new VoidScene(scene, camera, controls);
+  voidScene = new VoidScene(scene, camera, controls, renderer);
   await voidScene.init();
 
   // Create multiverse scene
-  multiverseScene = new MultiverseScene(scene, camera, controls);
+  multiverseScene = new MultiverseScene(scene, camera, controls, renderer);
   await multiverseScene.init();
 
   // DEV BYPASS: skip terminal/desk and jump straight to multiverse
