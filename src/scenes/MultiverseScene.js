@@ -163,14 +163,14 @@ export class MultiverseScene {
     });
 
     // Micro-bubbles scattered around the cluster
-    this._createMicroBubble([-20, 6, -12], 1.2);
-    this._createMicroBubble([22, -4, -15], 0.9);
-    this._createMicroBubble([-6, 14, -20], 1.5);
-    this._createMicroBubble([18, -10, -8], 0.7);
-    this._createMicroBubble([-16, -8, -18], 1.0);
-    this._createMicroBubble([4, 18, -10], 0.8);
-    this._createMicroBubble([-24, 2, -8], 1.3);
-    this._createMicroBubble([14, 10, -22], 0.6);
+    this._createMicroBubble([-28, 8, -15], 1.2);
+    this._createMicroBubble([28, -6, -18], 0.9);
+    this._createMicroBubble([-10, 22, -25], 1.5);
+    this._createMicroBubble([24, -14, -12], 0.7);
+    this._createMicroBubble([-22, -10, -22], 1.0);
+    this._createMicroBubble([6, 24, -15], 0.8);
+    this._createMicroBubble([-30, 4, -10], 1.3);
+    this._createMicroBubble([20, 14, -28], 0.6);
 
     // Suppress the global desk scene ambient while in multiverse
     this.scene.traverse((obj) => {
@@ -183,27 +183,33 @@ export class MultiverseScene {
     this.lights = [];
 
     // Deep purple ambient - keeps shadows from being pure black
-    const ambient = new THREE.AmbientLight(0x1a0a2e, 3);
+    const ambient = new THREE.AmbientLight(0x1a0a2e, 6);
     this.scene.add(ambient);
     this.lights.push(ambient);
 
     // Main violet fill - above the cluster
-    const violet = new THREE.PointLight(0x6622ff, 500, 80);
-    violet.position.set(0, 8, 5);
+    const violet = new THREE.PointLight(0x6622ff, 800, 120);
+    violet.position.set(-10, 20, 10);
     this.scene.add(violet);
     this.lights.push(violet);
 
     // Golden accent - off to the right, matches the warm cores
-    const gold = new THREE.PointLight(0xffaa44, 350, 70);
-    gold.position.set(8, 2, 3);
+    const gold = new THREE.PointLight(0xffaa44, 600, 100);
+    gold.position.set(18, 8, 10);
     this.scene.add(gold);
     this.lights.push(gold);
 
     // Cold blue underlight - gives depth from below
-    const blue = new THREE.PointLight(0x0033ff, 250, 60);
-    blue.position.set(-4, -6, 2);
+    const blue = new THREE.PointLight(0x0033ff, 400, 100);
+    blue.position.set(-12, -15, 5);
     this.scene.add(blue);
     this.lights.push(blue);
+
+    // Fourth light on the right side to hit the second bubble
+    const pink = new THREE.PointLight(0xff44aa, 300, 80);
+    pink.position.set(20, 5, 8);
+    this.scene.add(pink);
+    this.lights.push(pink);
 
     // Breathing animation for each bubble
     this.bubbles.forEach((bubble, i) => {
@@ -395,8 +401,8 @@ export class MultiverseScene {
       metalness: 0,
       ior: 1.35,
       iridescence: 1.0,
-      iridescenceIOR: 1.3,
-      iridescenceThicknessRange: [100, 400],
+      iridescenceThicknessRange: [200, 800],
+      iridescenceIOR: 1.5,
       transparent: true,
       opacity: 0.25,
       side: THREE.DoubleSide,
@@ -420,7 +426,7 @@ export class MultiverseScene {
         opacity: haloOpacities[i],
         blending: THREE.AdditiveBlending,
         depthWrite: false,
-        side: THREE.BackSide,
+        side: THREE.FrontSide,
       });
       group.add(new THREE.Mesh(hGeo, hMat));
     });
@@ -464,17 +470,20 @@ export class MultiverseScene {
 
     // Core glow
     const coreGeo = new THREE.SphereGeometry(radius, 16, 16);
+    const colors = [0xffd0ff, 0xaaddff, 0xffffff, 0xffeebb];
     const coreMat = new THREE.MeshBasicMaterial({
-      color: 0xffffff,
+      color: colors[Math.floor(Math.random() * colors.length)],
       transparent: true,
-      opacity: 0.6,
+      opacity: 0.7,
     });
+
     group.add(new THREE.Mesh(coreGeo, coreMat));
 
     // Two halo layers
     const haloColors = [0x8833ff, 0x4422ff];
-    const haloSizes = [3.0, 5.0].map((s) => radius * s);
-    const haloOpacity = [0.2, 0.08];
+    const haloSizes = [2.5, 4.0].map((s) => radius * s);
+    const haloOpacity = [0.06, 0.025];
+
     haloSizes.forEach((size, i) => {
       const hGeo = new THREE.SphereGeometry(size, 16, 16);
       const hMat = new THREE.MeshBasicMaterial({
@@ -483,7 +492,7 @@ export class MultiverseScene {
         opacity: haloOpacity[i],
         blending: THREE.AdditiveBlending,
         depthWrite: false,
-        side: THREE.BackSide,
+        side: THREE.FrontSide, // changed from BackSide
       });
       group.add(new THREE.Mesh(hGeo, hMat));
     });
