@@ -84,16 +84,29 @@ export class MultiverseScene {
     this.scene.add(this.stars);
 
     // Nebula cloud - particles clustered around several cloud centres
-    const nebulaCount = 600;
+    const nebulaCount = 1000;
     const nebulaGeo = new THREE.BufferGeometry();
     const nebulaPos = new Float32Array(nebulaCount * 3);
 
     // Cloud centres - loosely placed around the bubble cluster
     const cloudCentres = [
-      [-5, 3, -8],
-      [6, 3, -6],
-      [-1, 6, -12],
-      [4, 4, -10],
+      // Deep background
+      [-12, 5, -25],
+      [8, 8, -30],
+      [-3, -6, -22],
+      [14, -3, -28],
+      [-8, 10, -35],
+
+      // Wide sides
+      [-20, 2, -10],
+      [18, -4, -12],
+      [-15, -5, -18],
+      [16, 6, -20],
+
+      // Above and below
+      [2, 15, -15],
+      [-4, -12, -18],
+      [8, 12, -25],
     ];
 
     for (let i = 0; i < nebulaCount; i++) {
@@ -103,7 +116,7 @@ export class MultiverseScene {
 
       // Scatter around it using a gaussian-like spread
       // (adding three randoms approximates a bell curve)
-      const spread = 4;
+      const spread = 7;
       const x =
         centre[0] +
         (Math.random() + Math.random() + Math.random() - 1.5) * spread;
