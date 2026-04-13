@@ -137,6 +137,16 @@ export class MultiverseScene {
       this.bubbles.push(group);
     });
 
+    // Micro-bubbles scattered around the cluster
+    this._createMicroBubble([-7, 3, -4], 0.18);
+    this._createMicroBubble([7, -1, -5], 0.22);
+    this._createMicroBubble([-2, 5, -8], 0.15);
+    this._createMicroBubble([3, -4, -3], 0.2);
+    this._createMicroBubble([-5, -3, -6], 0.12);
+    this._createMicroBubble([1, 4, -2], 0.16);
+    this._createMicroBubble([-8, 0, -2], 0.25);
+    this._createMicroBubble([5, 3, -7], 0.14);
+
     // Suppress the global desk scene ambient while in multiverse
     this.scene.traverse((obj) => {
       if (obj.isAmbientLight && !this.lights.includes(obj)) {
