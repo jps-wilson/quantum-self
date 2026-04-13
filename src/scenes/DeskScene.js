@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { MODELS, MONITOR_CONFIG } from "../config/constants.js";
 import { loadModel } from "../utils/modelLoader.js";
 import { SpatialAudio } from "../utils/SpatialAudio.js";
+import gsap from "gsap";
 
 /**
  * Desk Scene
@@ -66,17 +67,13 @@ export class DeskScene {
     });
 
     // adding spatial audio to monitor
-    this.computerHum = new SpatialAudio(
-      this.camera,
-      "/audio/monitor-hum.mp3",
-      {
-        refDistance: 2, // starts fading after 2 units away
-        rolloffFactor: 1.5, // how quickly it fades with distance
-        volume: 0.4, // max volume when close
-        loop: true,
-        autoplay: true,
-      },
-    );
+    this.computerHum = new SpatialAudio(this.camera, "/audio/monitor-hum.mp3", {
+      refDistance: 2, // starts fading after 2 units away
+      rolloffFactor: 1.5, // how quickly it fades with distance
+      volume: 0.4, // max volume when close
+      loop: true,
+      autoplay: false,
+    });
 
     await this.computerHum.attachTo(this.monitorModel, this.audioListener);
     console.log("Spatial computer audio loaded");
@@ -243,6 +240,22 @@ export class DeskScene {
     document.body.style.cursor = "default";
     this.isHoveringMonitor = false;
     if (this.onTerminalOpen) this.onTerminalOpen();
-    this.terminal.enter();
+
+    // Zoom camera toward the monitor before opening terminal
+    const monitorPos = new THREE.Vector3(...MODELS.monitor.position);
+
+    gsap.to(this.camera.position, {
+      x: 0,
+      y: 1.0,
+      z: 1.2,
+      duration: 1.2,
+      ease: "power2.inOut",
+      onUpdate: () => {
+        this.camera.lookAt(monitorPos);
+      },
+      onComplete: () => {
+        this.terminal.enter();
+      },
+    });
   }
 }

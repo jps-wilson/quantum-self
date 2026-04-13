@@ -35,17 +35,10 @@ renderer.toneMappingExposure = 1.2;
 document.getElementById("three-container").appendChild(renderer.domElement);
 
 const controls = new FlyControls(camera, renderer.domElement);
-controls.movementSpeed = 10;
+controls.movementSpeed = 5;
 controls.rollSpeed = 0.5;
-controls.dragToLook = true; // hold mouse button to look, rather than auto-looking
-
-/**
- * --- HOW FLYCONTROLS WORKS ---
- * W/S - move forward/back
- * A/D - move left/right
- * R/F - move up/down
- * Hold and drag mouse - look around
- */
+controls.dragToLook = true;
+controls.enabled = false;
 
 // ============================================
 //                LIGHTING
