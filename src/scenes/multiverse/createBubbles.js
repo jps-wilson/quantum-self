@@ -1,6 +1,12 @@
 import * as THREE from "three";
 import gsap from "gsap";
 
+export const BUBBLE_DATA = [
+  { pos: [-8, 0, 0], radius: 14, core: 0xffcc88, halo: 0x6611ff },
+  { pos: [10, 1, -5], radius: 10, core: 0xffeedd, halo: 0x4422ff },
+  { pos: [3, 4, -18], radius: 6, core: 0xddaaff, halo: 0x8833ff },
+];
+
 /**
  * Creates a single iridescent bubble group at the given position.
  */
@@ -59,7 +65,14 @@ function createBubble(position, outerRadius, coreColor, haloColor, envMap) {
  * Pushes the mesh and its original vertex positions into the
  * provided arrays so MultiverseScene can animate them each frame.
  */
-function createBlob(position, radius = 2, scene, blobs, blobOriginalPositions, envMap) {
+function createBlob(
+  position,
+  radius = 2,
+  scene,
+  blobs,
+  blobOriginalPositions,
+  envMap,
+) {
   const geo = new THREE.SphereGeometry(radius, 48, 48);
 
   // Store original vertex positions before any deformation
@@ -140,14 +153,21 @@ export function createBubbles(scene, envMap) {
   const tweens = [];
 
   // Connector blob filling the space between the three main bubbles
-  const connector = createBlob([1, 1, -8], 8, scene, blobs, blobOriginalPositions, envMap);
+  const connector = createBlob(
+    [1, 1, -8],
+    8,
+    scene,
+    blobs,
+    blobOriginalPositions,
+    envMap,
+  );
   connector.scale.set(1.2, 0.8, 0.8);
 
   // Three main bubbles — large left, medium right, small far back
   const bubbleData = [
-    { pos: [-8, 0, 0],   radius: 14, core: 0xffcc88, halo: 0x6611ff },
-    { pos: [10, 1, -5],  radius: 10, core: 0xffeedd, halo: 0x4422ff },
-    { pos: [3, 4, -18],  radius: 6,  core: 0xddaaff, halo: 0x8833ff },
+    { pos: [-8, 0, 0], radius: 14, core: 0xffcc88, halo: 0x6611ff },
+    { pos: [10, 1, -5], radius: 10, core: 0xffeedd, halo: 0x4422ff },
+    { pos: [3, 4, -18], radius: 6, core: 0xddaaff, halo: 0x8833ff },
   ];
 
   bubbleData.forEach((b) => {
@@ -159,21 +179,25 @@ export function createBubbles(scene, envMap) {
   // Micro-bubbles scattered around the cluster
   const microData = [
     [[-28, 8, -15], 1.2],
-    [[28, -6, -18],  0.9],
+    [[28, -6, -18], 0.9],
     [[-10, 22, -25], 1.5],
     [[24, -14, -12], 0.7],
     [[-22, -10, -22], 1.0],
-    [[6, 24, -15],   0.8],
-    [[-30, 4, -10],  1.3],
-    [[20, 14, -28],  0.6],
+    [[6, 24, -15], 0.8],
+    [[-30, 4, -10], 1.3],
+    [[20, 14, -28], 0.6],
   ];
-  microData.forEach(([pos, r]) => createMicroBubble(pos, r, scene, microBubbles));
+  microData.forEach(([pos, r]) =>
+    createMicroBubble(pos, r, scene, microBubbles),
+  );
 
   // Breathing animation for each main bubble
   bubbles.forEach((bubble, i) => {
     tweens.push(
       gsap.to(bubble.scale, {
-        x: 1.06, y: 1.06, z: 1.06,
+        x: 1.06,
+        y: 1.06,
+        z: 1.06,
         duration: 3 + i * 0.8,
         ease: "sine.inOut",
         yoyo: true,
@@ -187,7 +211,9 @@ export function createBubbles(scene, envMap) {
   if (blobs[0]) {
     tweens.push(
       gsap.to(blobs[0].scale, {
-        x: 2.5, y: 1.6, z: 1.6,
+        x: 2.5,
+        y: 1.6,
+        z: 1.6,
         duration: 5,
         ease: "sine.inOut",
         yoyo: true,
