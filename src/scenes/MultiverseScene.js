@@ -26,6 +26,7 @@ export class MultiverseScene {
     this.stars = null;
     this.bubble = null;
     this.bubbleGroup = null;
+    this.bubbles = [];
   }
 
   async init() {
@@ -85,52 +86,19 @@ export class MultiverseScene {
     this.stars = new THREE.Points(geo, mat);
     this.scene.add(this.stars);
 
-    this.bubbleGroup = new THREE.Group();
+    this.bubbles = [];
 
-    // --- Outer bubble shell ---
-    const bubbleGeo = new THREE.SphereGeometry(3, 64, 64);
-    const bubbleMat = new THREE.MeshPhysicalMaterial({
-      color: 0x8888ff,
-      transmission: 0.95,
-      thickness: 0.4,
-      roughness: 0.05,
-      metalness: 0,
-      ior: 1.35,
-      iridescence: 1.0,
-      iridescenceIOR: 1.3,
-      iridescenceThicknessRange: [100, 400],
-      transparent: true,
-      opacity: 0.3,
-      side: THREE.DoubleSide,
-      envMap: this.envMap,
+    const bubbleData = [
+      { pos: [0, 0, 0], radius: 4, core: 0xffd0ff, halo: 0x8833f },
+      { pos: [5, 1, -3], radius: 2.5, core: 0xaaddff, halo: 0x2244ff },
+      { pos: [-4, -1, -2], radius: 3, core: 0xffeeaa, halo: 0x6622ff },
+    ];
+
+    bubbleData.forEach((b) => {
+      const group = this._createBubble(b.pos, b.radius, b.core, b.halo);
+      this.scene.add(group);
+      this.bubbles.push(group);
     });
-    const bubbleMesh = new THREE.Mesh(bubbleGeo, bubbleMat);
-    this.bubbleGroup.add(bubbleMesh);
-
-    // --- Inner core ---
-    const coreGeo = new THREE.SphereGeometry(0.6, 32, 32);
-    const coreMat = new THREE.MeshBasicMaterial({ color: 0xffd0ff });
-    const coreMesh = new THREE.Mesh(coreGeo, coreMat);
-    this.bubbleGroup.add(coreMesh);
-
-    // --- Glow halo layers ---
-    const haloSizes = [0.9, 1.2, 1.8];
-    const haloOpacities = [0.12, 0.07, 0.03];
-
-    haloSizes.forEach((size, i) => {
-      const hGeo = new THREE.SphereGeometry(size, 32, 32);
-      const hMat = new THREE.MeshBasicMaterial({
-        color: 0x8833ff,
-        transparent: true,
-        opacity: haloOpacities[i],
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-        side: THREE.BackSide,
-      });
-      this.bubbleGroup.add(new THREE.Mesh(hGeo, hMat));
-    });
-
-    this.scene.add(this.bubbleGroup);
 
     // Step 7: add lights here
 
@@ -160,16 +128,16 @@ export class MultiverseScene {
       this.starTexture = null;
     }
 
-    if (this.bubbleGroup) {
-      this.bubbleGroup.traverse((child) => {
+    this.bubbles.forEach((group) => {
+      group.traverse((child) => {
         if (child.isMesh) {
           child.geometry.dispose();
           child.material.dispose();
         }
       });
-      this.scene.remove(this.bubbleGroup);
-      this.bubbleGroup = null;
-    }
+      this.scene.remove(group);
+    });
+    this.bubbles = [];
 
     // Dispose geometries, materials, and remove meshes here as you add them
     // Pattern: this.mesh.geometry.dispose(); this.mesh.material.dispose(); this.scene.remove(this.mesh)
@@ -200,5 +168,52 @@ export class MultiverseScene {
     ctx.fillRect(0, 0, 32, 32);
 
     return new THREE.CanvasTexture(canvas);
+  }
+
+  _createBubble(position, outerRadius, coreColor, haloColor) {
+    const group = new THREE.Group();
+
+    // Outer shell
+    const bubbleGeo = new THREE.SphereGeometry(outerRadius, 64, 64);
+    const bubbleMat = new THREE.MeshPhysicalMaterial({
+      color: 0x8888ff,
+      transmission: 0.95,
+      thickness: 0.4,
+      roughness: 0.05,
+      metalness: 0,
+      ior: 1.35,
+      iridescence: 1.0,
+      iridescenceIOR: 1.3,
+      iridescenceThicknessRange: [100, 400],
+      transparent: true,
+      opacity: 0.3,
+      side: THREE.DoubleSide,
+      envMap: this.envMap,
+    });
+    group.add(new THREE.Mesh(bubbleGeo, bubbleMat));
+
+    // Inner core
+    const coreGeo = new THREE.SphereGeometry(outerRadius * 0.2, 32, 32);
+    const coreMat = new THREE.MeshBasicMaterial({ color: coreColor });
+    group.add(new THREE.Mesh(coreGeo, coreMat));
+
+    // Glow halos
+    const haloSizes = [0.3, 0.45, 0.65].map((s) => outerRadius * s);
+    const haloOpacities = [0.12, 0.07, 0.03];
+    haloSizes.forEach((size, i) => {
+      const hGeo = new THREE.SphereGeometry(size, 32, 32);
+      const hMat = new THREE.MeshBasicMaterial({
+        color: haloColor,
+        transparent: true,
+        opacity: haloOpacities[i],
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.BackSide,
+      });
+      group.add(new THREE.Mesh(hGeo, hMat));
+    });
+
+    group.position.set(...position);
+    return group;
   }
 }
