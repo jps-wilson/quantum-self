@@ -273,26 +273,23 @@ export class MultiverseScene {
 
     this.ambientAudio = new Audio("/audio/ambient-soundscape.mp3");
     this.ambientAudio.loop = true;
-    this.ambientAudio.volume = 0;
+    this.ambientAudio.volume = 0.35;
 
     // Browser autoplay policy: audio can only start after a user gesture.
-    // We try immediately (works if the user already clicked during the
-    // wormhole transition) and fall back to a one-time pointer listener.
-    const startAudio = () => {
-      this.ambientAudio.play().catch(() => {});
-      gsap.to(this.ambientAudio, { volume: 0.35, duration: 4 });
-      window.removeEventListener("pointerdown", startAudio);
+    // Try immediately (works after wormhole click), fall back to next click.
+    this._startAudio = () => {
+      if (this.ambientAudio) {
+        this.ambientAudio.play().catch((e) => console.warn("Audio error:", e));
+      }
     };
 
     this.ambientAudio
       .play()
-      .then(() => {
-        // Autoplay succeeded — fade in
-        gsap.to(this.ambientAudio, { volume: 0.35, duration: 4 });
-      })
       .catch(() => {
-        // Blocked — wait for next click then start
-        window.addEventListener("pointerdown", startAudio, { once: true });
+        // Blocked — play on next user click
+        window.addEventListener("pointerdown", this._startAudio, {
+          once: true,
+        });
       });
 
     // Window resize for bloom effect
@@ -383,15 +380,15 @@ export class MultiverseScene {
 
     window.removeEventListener("resize", this._onResize);
 
+    // Clean up the fallback listener in case audio never started
+    if (this._startAudio) {
+      window.removeEventListener("pointerdown", this._startAudio);
+      this._startAudio = null;
+    }
+
     if (this.ambientAudio) {
-      gsap.to(this.ambientAudio, {
-        volume: 0,
-        duration: 1.5,
-        onComplete: () => {
-          this.ambientAudio.pause();
-          this.ambientAudio = null;
-        },
-      });
+      this.ambientAudio.pause();
+      this.ambientAudio = null;
     }
   }
 
