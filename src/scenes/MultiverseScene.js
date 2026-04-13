@@ -222,14 +222,14 @@ export class MultiverseScene {
     this.lights.push(gold);
 
     // Cold blue underlight - gives depth from below
-    const blue = new THREE.PointLight(0x0033ff, 150, 100);
-    blue.position.set(-12, -15, 5);
+    const blue = new THREE.PointLight(0x0033ff, 150, 150);
+    blue.position.set(-30, -30, 20);
     this.scene.add(blue);
     this.lights.push(blue);
 
     // Fourth light on the right side to hit the second bubble
-    const pink = new THREE.PointLight(0xff44aa, 300, 80);
-    pink.position.set(20, 5, 8);
+    const pink = new THREE.PointLight(0xff44aa, 150, 150);
+    pink.position.set(50, 15, 20);
     this.scene.add(pink);
     this.lights.push(pink);
 
@@ -440,10 +440,13 @@ export class MultiverseScene {
       iridescenceIOR: 1.5,
       transparent: true,
       opacity: 0.4,
+      depthWrite: false,
       side: THREE.DoubleSide,
       envMap: this.envMap,
     });
-    group.add(new THREE.Mesh(bubbleGeo, bubbleMat));
+    const bubbleMesh = new THREE.Mesh(bubbleGeo, bubbleMat);
+    bubbleMesh.renderOrder = 1;
+    group.add(bubbleMesh);
 
     // Inner core
     const coreGeo = new THREE.SphereGeometry(outerRadius * 0.05, 16, 16);
@@ -479,13 +482,14 @@ export class MultiverseScene {
 
     const mat = new THREE.MeshPhysicalMaterial({
       color: 0xffffff,
-      transmission: 0.85,
+      transmission: 0.3,
       roughness: 0.0,
       metalness: 0,
       iridescence: 0.8,
       iridescenceThicknessRange: [100, 300],
       transparent: true,
-      opacity: 0.6,
+      opacity: 0.22,
+      depthWrite: false,
       side: THREE.DoubleSide,
       envMap: this.envMap,
     });
@@ -497,6 +501,7 @@ export class MultiverseScene {
     this.blobs.push(mesh);
     this.blobOriginalPositions.push(originalPositions);
 
+    mesh.renderOrder = 2; // blobs draw after shells
     return mesh;
   }
 
