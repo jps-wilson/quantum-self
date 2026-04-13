@@ -6,6 +6,7 @@ import { loadModel } from "./utils/modelLoader.js";
 import { Wormhole } from "./utils/wormhole.js";
 import { DeskScene } from "./scenes/DeskScene.js";
 import { VoidScene } from "./scenes/VoidScene.js";
+import { MultiverseScene } from "./scenes/MultiverseScene.js";
 import { SceneManager } from "./scenes/SceneManager.js";
 import { Terminal } from "./terminal/Terminal.js";
 
@@ -61,6 +62,7 @@ bulbLight.castShadow = true;
 
 const wormhole = new Wormhole(scene);
 let voidScene = null;
+let multiverseScene = null;
 
 const computerHum = new Audio("/audio/pulse.mp3");
 computerHum.loop = true;
@@ -122,7 +124,7 @@ async function onTransitionStart() {
   // 7. Dispose wormhole and load void scene underneath while still white
   audio.pause();
   wormhole.dispose();
-  sceneManager.setScene(voidScene);
+  sceneManager.setScene(multiverseScene);
 
   // 8. Fade the white light out to reveal the void
   await new Promise((resolve) => {
@@ -203,8 +205,15 @@ async function init() {
   voidScene = new VoidScene(scene, camera, controls);
   await voidScene.init();
 
-  // Start with desk scene
-  sceneManager.setScene(deskScene);
+  // Create multiverse scene
+  multiverseScene = new MultiverseScene(scene, camera, controls);
+  await multiverseScene.init();
+
+  // DEV BYPASS: skip terminal/desk and jump straight to multiverse
+  terminal.hide();
+  hideDeskScene();
+  sceneManager.setScene(multiverseScene);
+  // sceneManager.setScene(deskScene); // ← restore to re-enable normal flow
 
   // Start computer hum on first user interaction (autoplay policy)
   const startHum = () => {

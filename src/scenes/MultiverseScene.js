@@ -1,98 +1,69 @@
+import * as THREE from "three";
+
 /**
  * Multiverse Scene
- //TODO: [explanation of scene]
+ * Fractal cosmic bubble environment — loaded after the wormhole transition.
+ *
+ * Build order (see teaching plan):
+ *   Step 0  ✓ Shell wired into main.js
+ *   Step 1  - Dark background + fog
+ *   Step 2  - Particle star field
+ *   Step 3  - Single iridescent bubble (MeshPhysicalMaterial)
+ *   Step 4  - Nested inner glowing core (additive blending)
+ *   Step 5  - Multiple bubbles via _createBubble() factory
+ *   Step 6  - Organic blob connective shapes (vertex displacement)
+ *   Step 7  - Lighting for the mood
+ *   Step 8  - Animation (update loop + GSAP breathing)
  */
+export class MultiverseScene {
+  constructor(scene, camera, controls) {
+    this.scene = scene;
+    this.camera = camera;
+    this.controls = controls;
 
-import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/Addons.js";
-
-export default class MultiverseScene {
-  constructor() {
-    this.scene = null;
-    this.camera = null;
-    this.renderer = null;
-    this.controls = null;
-    this.animationId = null;
+    this.originalBackground = null;
+    // Add more instance properties here as you build each step
   }
 
-  init(canvas) {
-    console.log("MultiverseScene init called");
-
-    // Scene
-    this.scene = new THREE.Scene();
-
-    // Camera
-    this.camera = new THREE.PerspectiveCamera(
-      75,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      2000,
-    );
-    this.camera.position.set(0, 0, 100);
-
-    // Renderer
-    this.renderer = new THREE.WebGLRenderer(
-      this.camera,
-      this.renderer.domElement,
-    );
-    this.controls.enableDamping = true;
-    this.controls.dampingFactor = 0.05;
-    this.controls.rotateSpeed = 0.4;
-    this.controls.zoomSpeed = 0.8;
-    this.controls.enablePan = false;
-    this.controls.minDistance = 10;
-    this.controls.maxDistance = 500;
-
-    // test cube to verify scene is working
-    const testGeo = new THREE.BoxGeometry(10, 10, 10);
-    const testMat = new THREE.MeshBasicMaterial({ color: 0xff00ff });
-    const testCube = new THREE.Mesh(testGeo, testMat);
-    this.scene.add(testCube);
-
-    // Start animation
-    this.animate();
+  async init() {
+    // Called once at app startup — put expensive async setup here
+    // (e.g. loading environment maps, textures)
   }
 
-  animate() {
-    this.animationId = requestAnimationFrame(() => this.animate());
+  enter() {
+    // Called every time this scene becomes active
+    this.originalBackground = this.scene.background;
 
+    this.scene.background = new THREE.Color(0x05030f);
+    this.scene.fog = new THREE.FogExp2(0x05030f, 0.018);
+
+    // Step 2: create star field here
+
+    // Step 3–5: create bubble(s) here
+
+    // Step 7: add lights here
+
+    // Position camera
+    this.camera.position.set(0, 0, 20);
+    this.controls.target.set(0, 0, 0);
+    this.controls.enabled = true;
     this.controls.update();
-    this.renderer.render(this.scene, this.camera);
   }
 
-  update(deltaTime) {
-    // TODO: Animation logic to go here
+  exit() {
+    // Called every time this scene is deactivated
+    // Restore original state and dispose everything you created in enter()
+    this.scene.background = this.originalBackground;
+    this.scene.fog = null;
+
+    // Dispose geometries, materials, and remove meshes here as you add them
+    // Pattern: this.mesh.geometry.dispose(); this.mesh.material.dispose(); this.scene.remove(this.mesh)
   }
 
-  handleResize() {
-    this.camera.aspect = window.innerWidth / window.innerHeight;
-    this.camera.updateProjectionMatrix();
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
-  }
-
-  dispose() {
-    console.log("MultiverseScene dispose called");
-
-    if (this.animationId) {
-      cancelAnimationFrame(this.animationId);
-    }
-
-    if (this.controls) {
-      this.controls.dispose();
-    }
-
-    // Clean up geometries and materials
-    this.scene.traverse((object) => {
-      if (object.geometry) {
-        object.geometry.dispose();
-      }
-      if (object.material) {
-        if (Array.isArray(object.material)) {
-          object.material.forEach((material) => material.dispose());
-        } else {
-          object.material.dispose();
-        }
-      }
-    });
+  update(time) {
+    // Called every frame — time is in seconds
+    // Step 2: rotate star field here
+    // Step 6: vertex displacement loop here
+    // Step 8: per-frame opacity/rotation animation here
   }
 }
