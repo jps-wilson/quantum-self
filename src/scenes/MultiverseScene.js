@@ -16,6 +16,8 @@ export class MultiverseScene {
     this.bubble = null;
     this.bubbleGroup = null;
     this.bubbles = [];
+    this.blobs = [];
+    this.blobOriginalPositions = [];
   }
 
   async init() {
@@ -83,6 +85,8 @@ export class MultiverseScene {
       { pos: [1, 2, -6], radius: 1.8, core: 0xddaaff, halo: 0x8833ff }, // small, far back bubble
     ];
 
+    this._createBlob([0.5, -0.5, -1]);
+
     bubbleData.forEach((b) => {
       const group = this._createBubble(b.pos, b.radius, b.core, b.halo);
       this.scene.add(group);
@@ -104,6 +108,9 @@ export class MultiverseScene {
     this.scene.background = this.originalBackground;
     this.scene.fog = null;
     this.scene.environment = null;
+
+    // Dispose geometries, materials, and remove meshes here as you add them
+    // Pattern: this.mesh.geometry.dispose(); this.mesh.material.dispose(); this.scene.remove(this.mesh)
 
     if (this.stars) {
       this.stars.geometry.dispose();
@@ -128,8 +135,13 @@ export class MultiverseScene {
     });
     this.bubbles = [];
 
-    // Dispose geometries, materials, and remove meshes here as you add them
-    // Pattern: this.mesh.geometry.dispose(); this.mesh.material.dispose(); this.scene.remove(this.mesh)
+    this.blobs.forEach((blob) => {
+      blob.geometry.dispose();
+      blob.material.dispose();
+      this.scene.remove(blob);
+    });
+    this.blobs = [];
+    this.blobOriginalPositions = [];
   }
 
   update(time) {
@@ -137,7 +149,31 @@ export class MultiverseScene {
     if (this.stars) {
       this.stars.rotation.y = time * 0.01;
     }
-    // Step 6: vertex displacement loop here
+    this.blobs.forEach((blob, index) => {
+      const posAttr = blob.geometry.getAttribute("position");
+      const original = this.blobOriginalPositions[index];
+
+      for (let i = 0; i < posAttr.count; i++) {
+        const ox = original[i * 3];
+        const oy = original[i * 3 + 1];
+        const oz = original[i * 3 + 2];
+
+        const angle = Math.atan2(oy, ox);
+        const elevation = Math.asin(Math.max(-1, Math.min(1, oz / 2)));
+        const wave =
+          Math.sin(angle * 3 + time * 0.8) *
+          Math.cos(elevation * 2 + time * 0.5);
+        const disp = 1 + wave * 0.18;
+
+        posAttr.array[i * 3] = ox * disp;
+        posAttr.array[i * 3 + 1] = oy * disp;
+        posAttr.array[i * 3 + 2] = oz * disp;
+      }
+
+      posAttr.needsUpdate = true;
+      blob.geometry.computeVertexNormals();
+    });
+
     // Step 8: per-frame opacity/rotation animation here
   }
 
@@ -204,5 +240,33 @@ export class MultiverseScene {
 
     group.position.set(...position);
     return group;
+  }
+
+  _createBlob(position) {
+    const geo = new THREE.SphereGeometry(2, 48, 48);
+
+    // Store the original vertex positions BEFORE any deformation
+    const posAttr = geo.getAttribute("position");
+    const originalPositions = posAttr.array.slice();
+
+    const mat = new THREE.MeshPhysicalMaterial({
+      color: 0x7744bb,
+      transmission: 0.6,
+      roughness: 0.1,
+      metalness: 0,
+      iridescence: 0.8,
+      iridescenceThicknessRange: [100, 300],
+      transparent: true,
+      opacity: 0.4,
+      side: THREE.DoubleSide,
+      envMap: this.envMap,
+    });
+
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(...position);
+    this.scene.add(mesh);
+
+    this.blobs.push(mesh);
+    this.blobOriginalPositions.push(originalPositions);
   }
 }
