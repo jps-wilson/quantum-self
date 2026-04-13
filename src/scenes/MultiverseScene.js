@@ -25,6 +25,7 @@ export class MultiverseScene {
     this.originalBackground = null;
     this.stars = null;
     this.bubble = null;
+    this.bubbleGroup = null;
   }
 
   async init() {
@@ -47,6 +48,7 @@ export class MultiverseScene {
 
     this.scene.background = new THREE.Color(0x05030f);
     this.scene.fog = new THREE.FogExp2(0x05030f, 0.018);
+    this.scene.environment = this.envMap;
 
     const count = 4000;
     const geo = new THREE.BufferGeometry();
@@ -83,6 +85,9 @@ export class MultiverseScene {
     this.stars = new THREE.Points(geo, mat);
     this.scene.add(this.stars);
 
+    this.bubbleGroup = new THREE.Group();
+
+    // --- Outer bubble shell ---
     const bubbleGeo = new THREE.SphereGeometry(3, 64, 64);
     const bubbleMat = new THREE.MeshPhysicalMaterial({
       color: 0x8888ff,
@@ -99,9 +104,33 @@ export class MultiverseScene {
       side: THREE.DoubleSide,
       envMap: this.envMap,
     });
+    const bubbleMesh = new THREE.Mesh(bubbleGeo, bubbleMat);
+    this.bubbleGroup.add(bubbleMesh);
 
-    this.bubble = new THREE.Mesh(bubbleGeo, bubbleMat);
-    this.scene.add(this.bubble);
+    // --- Inner core ---
+    const coreGeo = new THREE.SphereGeometry(0.6, 32, 32);
+    const coreMat = new THREE.MeshBasicMaterial({ color: 0xffd0ff });
+    const coreMesh = new THREE.Mesh(coreGeo, coreMat);
+    this.bubbleGroup.add(coreMesh);
+
+    // --- Glow halo layers ---
+    const haloSizes = [0.9, 1.2, 1.8];
+    const haloOpacities = [0.12, 0.07, 0.03];
+
+    haloSizes.forEach((size, i) => {
+      const hGeo = new THREE.SphereGeometry(size, 32, 32);
+      const hMat = new THREE.MeshBasicMaterial({
+        color: 0x8833ff,
+        transparent: true,
+        opacity: haloOpacities[i],
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.BackSide,
+      });
+      this.bubbleGroup.add(new THREE.Mesh(hGeo, hMat));
+    });
+
+    this.scene.add(this.bubbleGroup);
 
     // Step 7: add lights here
 
@@ -117,6 +146,7 @@ export class MultiverseScene {
     // Restore original state and dispose everything you created in enter()
     this.scene.background = this.originalBackground;
     this.scene.fog = null;
+    this.scene.environment = null;
 
     if (this.stars) {
       this.stars.geometry.dispose();
@@ -130,11 +160,15 @@ export class MultiverseScene {
       this.starTexture = null;
     }
 
-    if (this.bubble) {
-      this.bubble.geometry.dispose();
-      this.bubble.material.dispose();
-      this.scene.remove(this.bubble);
-      this.bubble = null;
+    if (this.bubbleGroup) {
+      this.bubbleGroup.traverse((child) => {
+        if (child.isMesh) {
+          child.geometry.dispose();
+          child.material.dispose();
+        }
+      });
+      this.scene.remove(this.bubbleGroup);
+      this.bubbleGroup = null;
     }
 
     // Dispose geometries, materials, and remove meshes here as you add them
