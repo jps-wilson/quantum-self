@@ -31,16 +31,25 @@ export class MultiverseUI {
     QUESTIONS.forEach((q, i) => {
       const pos = bubblePositions[i];
 
-      // offset panel slightly above and in front of bubble
+      // Panel floats slightly above the bubble centre
       const worldPos = {
         x: pos.x,
         y: pos.y + pos.radius * 0.6,
         z: pos.z + pos.radius * 0.8,
       };
 
+      // Proximity threshold — how close the camera needs to be to see the panel
+      const proximityThreshold = pos.radius * 2.8;
+
       const el = this._createQuestionPanel(q);
       this.container.appendChild(el);
-      this.questionPanels.push({ el, worldPos, questionId: q.id });
+      this.questionPanels.push({
+        el,
+        worldPos,
+        bubblePos: pos,
+        proximityThreshold,
+        questionId: q.id,
+      });
     });
   }
 
@@ -51,30 +60,42 @@ export class MultiverseUI {
     const height = renderer.domElement.clientHeight;
 
     // Update question panel screen positions
-    this.questionPanels.forEach(({ el, worldPos, questionId }) => {
-      // Don't show panels for already answered questions
-      if (this.answers[questionId] !== undefined) {
-        el.classList.remove("visible");
-        return;
-      }
+    this.questionPanels.forEach(
+      ({ el, worldPos, bubblePos, proximityThreshold, questionId }) => {
+        // Don't show panels for already answered questions
+        if (this.answers[questionId] !== undefined) {
+          el.classList.remove("visible");
+          return;
+        }
 
-      const screen = this._worldToScreen(worldPos, camera, width, height);
+        // Hide if camera is too far from the bubble
+        const dx = camera.position.x - bubblePos.x;
+        const dy = camera.position.y - bubblePos.y;
+        const dz = camera.position.z - bubblePos.z;
+        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (dist > proximityThreshold) {
+          el.classList.remove("visible");
+          return;
+        }
 
-      // Only show if in front of camera and within screen bounds
-      if (
-        screen.z < 1 &&
-        screen.x > 0 &&
-        screen.x < width &&
-        screen.y > 0 &&
-        screen.y < height
-      ) {
-        el.style.left = `${screen.x}px`;
-        el.style.top = `${screen.y}px`;
-        el.classList.add("visible");
-      } else {
-        el.classList.remove("visible");
-      }
-    });
+        const screen = this._worldToScreen(worldPos, camera, width, height);
+
+        // Only show if in front of camera and within screen bounds
+        if (
+          screen.z < 1 &&
+          screen.x > 0 &&
+          screen.x < width &&
+          screen.y > 0 &&
+          screen.y < height
+        ) {
+          el.style.left = `${screen.x}px`;
+          el.style.top = `${screen.y}px`;
+          el.classList.add("visible");
+        } else {
+          el.classList.remove("visible");
+        }
+      },
+    );
 
     // Update narrative panel screen positions
     this.narrativePanels.forEach(({ el, worldPos }) => {
@@ -120,7 +141,8 @@ export class MultiverseUI {
   dispose() {
     this.container.innerHTML = "";
     this.questionPanels = [];
-    this.narrativePanels = null;
+    this.narrativePanels = [];
+    this.portraitPanel = null;
     this.answers = {};
   }
 
@@ -190,18 +212,9 @@ export class MultiverseUI {
   }
 
   _worldToScreen(worldPos, camera, width, height) {
-    // Temporarily create a vector, project it, convert to screen coords
     const x = worldPos.x;
     const y = worldPos.y;
     const z = worldPos.z;
-
-    // Manual 3D to screen projection using the camera matrices
-    const vec = { x, y, z };
-
-    // Use a pre-created reusable vector stored on the instance
-    if (!this._projVec) {
-      this._projVec = new DOMPoint();
-    }
 
     const mv = camera.matrixWorldInverse;
     const p = camera.projectionMatrix;

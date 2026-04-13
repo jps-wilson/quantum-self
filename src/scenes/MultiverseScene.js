@@ -284,7 +284,7 @@ export class MultiverseScene {
     }
 
     if (this.ui) {
-      this.ui.update(this.camera, this.render);
+      this.ui.update(this.camera, this.renderer);
     }
   }
 
