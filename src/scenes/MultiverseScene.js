@@ -222,7 +222,7 @@ export class MultiverseScene {
     this.lights.push(gold);
 
     // Cold blue underlight - gives depth from below
-    const blue = new THREE.PointLight(0x0033ff, 400, 100);
+    const blue = new THREE.PointLight(0x0033ff, 150, 100);
     blue.position.set(-12, -15, 5);
     this.scene.add(blue);
     this.lights.push(blue);
@@ -485,7 +485,7 @@ export class MultiverseScene {
       iridescence: 0.8,
       iridescenceThicknessRange: [100, 300],
       transparent: true,
-      opacity: 0.1,
+      opacity: 0.6,
       side: THREE.DoubleSide,
       envMap: this.envMap,
     });
@@ -509,7 +509,7 @@ export class MultiverseScene {
     const coreMat = new THREE.MeshBasicMaterial({
       color: colors[Math.floor(Math.random() * colors.length)],
       transparent: true,
-      opacity: 0.7,
+      opacity: 0.5,
     });
 
     group.add(new THREE.Mesh(coreGeo, coreMat));
