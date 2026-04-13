@@ -395,6 +395,17 @@ export class MultiverseScene {
       this.nebula.rotation.y = time * 0.004;
       this.nebula.rotation.x = time * 0.002;
     }
+
+    if (this.stars) {
+      this.stars.position.copy(this.camera.position);
+      this.stars.rotation.y = time * 0.01;
+    }
+
+    if (this.nebula) {
+      this.nebula.position.copy(this.camera.position);
+      this.nebula.rotation.y = time * 0.004;
+      this.nebula.rotation.x = time * 0.002;
+    }
   }
 
   render() {
