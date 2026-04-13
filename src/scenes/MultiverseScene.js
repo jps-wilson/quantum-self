@@ -271,11 +271,29 @@ export class MultiverseScene {
     this.camera.position.set(0, 0, 45);
     this.camera.lookAt(0, 0, 0);
 
-    this.ambientAudio = new Audio("/audio/pulse.mp3");
+    this.ambientAudio = new Audio("/audio/ambient-soundscape.mp3");
     this.ambientAudio.loop = true;
     this.ambientAudio.volume = 0;
-    this.ambientAudio.play().catch(() => {});
-    gsap.to(this.ambientAudio, { volume: 0.15, duration: 3 });
+
+    // Browser autoplay policy: audio can only start after a user gesture.
+    // We try immediately (works if the user already clicked during the
+    // wormhole transition) and fall back to a one-time pointer listener.
+    const startAudio = () => {
+      this.ambientAudio.play().catch(() => {});
+      gsap.to(this.ambientAudio, { volume: 0.35, duration: 4 });
+      window.removeEventListener("pointerdown", startAudio);
+    };
+
+    this.ambientAudio
+      .play()
+      .then(() => {
+        // Autoplay succeeded — fade in
+        gsap.to(this.ambientAudio, { volume: 0.35, duration: 4 });
+      })
+      .catch(() => {
+        // Blocked — wait for next click then start
+        window.addEventListener("pointerdown", startAudio, { once: true });
+      });
 
     // Window resize for bloom effect
     this._onResize = () => {
