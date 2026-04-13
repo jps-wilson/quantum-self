@@ -379,9 +379,6 @@ export class MultiverseScene {
 
   update(time) {
     // Called every frame — time is in seconds
-    if (this.stars) {
-      this.stars.rotation.y = time * 0.01;
-    }
     this.blobs.forEach((blob, index) => {
       const posAttr = blob.geometry.getAttribute("position");
       const original = this.blobOriginalPositions[index];
