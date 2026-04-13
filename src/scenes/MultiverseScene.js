@@ -27,6 +27,8 @@ export class MultiverseScene {
     this.microBubbles = [];
 
     this.tweens = [];
+
+    this.ambientAudio = null;
   }
 
   async init() {
@@ -269,6 +271,12 @@ export class MultiverseScene {
     this.camera.position.set(0, 0, 45);
     this.camera.lookAt(0, 0, 0);
 
+    this.ambientAudio = new Audio("/audio/pulse.mp3");
+    this.ambientAudio.loop = true;
+    this.ambientAudio.volume = 0;
+    this.ambientAudio.play().catch(() => {});
+    gsap.to(this.ambientAudio, { volume: 0.15, duration: 3 });
+
     // Window resize for bloom effect
     this._onResize = () => {
       this.composer.setSize(window.innerWidth, window.innerHeight);
@@ -356,6 +364,17 @@ export class MultiverseScene {
     this.microBubbles = [];
 
     window.removeEventListener("resize", this._onResize);
+
+    if (this.ambientAudio) {
+      gsap.to(this.ambientAudio, {
+        volume: 0,
+        duration: 1.5,
+        onComplete: () => {
+          this.ambientAudio.pause();
+          this.ambientAudio = null;
+        },
+      });
+    }
   }
 
   update(time) {
