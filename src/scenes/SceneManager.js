@@ -48,7 +48,12 @@ export class SceneManager {
   }
 
   // render current scene
+  // if the scene has its own render() method (e.g. for post-processing), use that
   render() {
-    this.renderer.render(this.scene, this.camera);
+    if (this.currentScene && this.currentScene.render) {
+      this.currentScene.render();
+    } else {
+      this.renderer.render(this.scene, this.camera);
+    }
   }
 }
