@@ -391,11 +391,6 @@ export class MultiverseScene {
       bubble.rotation.x = time * (0.02 + i * 0.005);
     });
 
-    if (this.nebula) {
-      this.nebula.rotation.y = time * 0.004;
-      this.nebula.rotation.x = time * 0.002;
-    }
-
     if (this.stars) {
       this.stars.position.copy(this.camera.position);
       this.stars.rotation.y = time * 0.01;
