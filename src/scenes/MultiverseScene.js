@@ -50,7 +50,7 @@ export class MultiverseScene {
       new THREE.Vector2(window.innerWidth, window.innerHeight),
       0.6, // strength - how intense the glow
       0.8, // radius - how far it spreads
-      0.1, // threshold - only pixels brighter than this bloom
+      0.3, // threshold - only pixels brighter than this bloom
     );
     this.composer.addPass(bloom);
     this.bloom = bloom;
@@ -210,7 +210,7 @@ export class MultiverseScene {
     this.lights.push(ambient);
 
     // Main violet fill - above the cluster
-    const violet = new THREE.PointLight(0x6622ff, 300, 120);
+    const violet = new THREE.PointLight(0x6622ff, 150, 120);
     violet.position.set(-10, 20, 10);
     this.scene.add(violet);
     this.lights.push(violet);
