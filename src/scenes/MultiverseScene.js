@@ -258,6 +258,20 @@ export class MultiverseScene {
       this.ui = null;
     }
 
+    // Cleanup chosen self silhouettes
+    this.chosenSilhouettes.forEach((s) => s.dispose());
+    this.chosenSilhouettes = [];
+
+    // Alternate self particle clouds
+    this.alternateClouds.forEach((a) => a.dispose());
+    this.alternateClouds = [];
+
+    // Neural network
+    if (this.neuralNetwork) {
+      this.neuralNetwork.dispose();
+      this.neuralNetwork = null;
+    }
+
     // Audio
     if (this._startAudio) {
       window.removeEventListener("pointerdown", this._startAudio);
@@ -316,6 +330,14 @@ export class MultiverseScene {
       this.nebula.position.copy(this.camera.position);
       this.nebula.rotation.y = time * 0.004;
       this.nebula.rotation.x = time * 0.002;
+    }
+
+    this.chosenSilhouettes.forEach(({ mesh }) => {
+      mesh.lookAt(this.camera.position);
+    });
+
+    if (this.ui) {
+      this.ui.update(this.camera, this.renderer);
     }
 
     if (this.ui) {

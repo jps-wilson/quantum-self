@@ -105,12 +105,6 @@ export class MultiverseUI {
         el.style.top = `${screen.y}px`;
       }
     });
-
-    // Update portrait panel position (fixed to centre of screen)
-    if (this.portraitPanel) {
-      this.portraitPanel.style.left = `${width / 2}px`;
-      this.portraitPanel.style.top = `${height / 2}px`;
-    }
   }
 
   // --- Answer handling ------------------------------------------------
@@ -199,6 +193,13 @@ export class MultiverseUI {
     const q2 = this.answers[2];
     const text = generatePortrait(q0, q1, q2);
 
+    // Dark backdrop
+    const backdrop = document.createElement("div");
+    backdrop.id = "portrait-backdrop";
+    this.container.appendChild(backdrop);
+    setTimeout(() => backdrop.classList.add("visible"), 50);
+
+    // Portrait card
     const el = document.createElement("div");
     el.id = "portrait-panel";
     el.innerHTML = `
