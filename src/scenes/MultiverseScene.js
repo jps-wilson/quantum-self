@@ -146,7 +146,8 @@ export class MultiverseScene {
     );
     this.ui.onAnswer = (questionId, answerId) => {
       const question = QUESTIONS[questionId];
-      const bd = BUBBLE_DATA[QUESTIONS.bubbleIndex];
+      const bd = BUBBLE_DATA[questionId];
+      if (!bd) return;
       const bubblePos = { x: bd.pos[0], y: bd.pos[1], z: bd.pos[2] };
 
       // Chosen self silhouette inside the bubble
