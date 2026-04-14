@@ -5,6 +5,12 @@ import { createStars } from "./multiverse/createStars.js";
 import { createBubbles, BUBBLE_DATA } from "./multiverse/createBubbles.js";
 import { createLights } from "./multiverse/createLights.js";
 import { MultiverseUI } from "../ui/MultiverseUI.js";
+import {
+  createChosenSelf,
+  createAlternateSelves,
+} from "./multiverse/createSelf.js";
+import { createNeuralNetwork } from "./multiverse/createNeuralNetwork.js";
+import { QUESTIONS } from "../data/questions.js";
 
 /**
  * MultiverseScene
@@ -48,6 +54,9 @@ export class MultiverseScene {
     this.lights = [];
 
     this.ui = null;
+    this.chosenSilhouettes = [];
+    this.alternateClouds = [];
+    this.neuralNetwork = null;
 
     this.ambientAudio = null;
     this._startAudio = null;
@@ -136,7 +145,33 @@ export class MultiverseScene {
       })),
     );
     this.ui.onAnswer = (questionId, answerId) => {
-      // TODO: Bubble reaction will be added here in a later step
+      const question = QUESTIONS[questionId];
+      const bd = BUBBLE_DATA[QUESTIONS.bubbleIndex];
+      const bubblePos = { x: bd.pos[0], y: bd.pos[1], z: bd.pos[2] };
+
+      // Chosen self silhouette inside the bubble
+      const chosen = createChosenSelf(this.scene, bubblePos, bd.radius);
+      this.chosenSilhouettes.push(chosen);
+
+      // Ghostly alternate selves outside the bubble
+      const alternates = createAlternateSelves(
+        this.scene,
+        bubblePos,
+        bd.radius,
+        answerId,
+        question.answers,
+      );
+      this.alternateClouds.push(...alternates);
+
+      // Once all three questions answered - reveal the neural network
+      if (Object.keys(this.ui.answers).length === QUESTIONS.length) {
+        setTimeout(() => {
+          this.neuralNetwork = createNeuralNetwork(
+            this.scene,
+            BUBBLE_DATA.map((b) => ({ x: b.pos[0], y: b.pos[1], z: b.pos[2] })),
+          );
+        }, 1500);
+      }
       console.log(`Question ${questionId} answered: ${answerId}`);
     };
   }
