@@ -5,7 +5,7 @@ import { createStars } from "./multiverse/createStars.js";
 import { createBubbles, BUBBLE_DATA } from "./multiverse/createBubbles.js";
 import { createLights } from "./multiverse/createLights.js";
 import { MultiverseUI } from "../ui/MultiverseUI.js";
-import { createAlternateSelves } from "./multiverse/createSelf.js";
+import { createChosenSelf } from "./multiverse/createSelf.js";
 import { createNeuralNetwork } from "./multiverse/createNeuralNetwork.js";
 import { QUESTIONS } from "../data/questions.js";
 
@@ -312,10 +312,6 @@ export class MultiverseScene {
         this._onBubbleExit(this._lastInsideIndex);
       if (insideIndex !== -1) this._onBubbleEnter(insideIndex);
       this._lastInsideIndex = insideIndex;
-    }
-
-    if (this.ui) {
-      this.ui.update(this.camera, this.renderer);
     }
 
     if (this.ui) {
