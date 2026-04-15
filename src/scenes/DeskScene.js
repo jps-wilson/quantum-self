@@ -24,6 +24,7 @@ export class DeskScene {
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
     this.isHoveringMonitor = false;
+    this.inTransition = false;
 
     // audio setup
     this.audioListener = SpatialAudio.createListener(camera);
@@ -185,7 +186,7 @@ export class DeskScene {
   }
 
   _updateScreenGlow() {
-    if (!this.screenMaterial) return;
+    if (!this.screenMaterial || this.inTransition) return;
     this.screenMaterial.emissiveIntensity =
       MONITOR_CONFIG.screen.emissiveBase +
       Math.random() * MONITOR_CONFIG.screen.emissiveVariance;
@@ -237,24 +238,68 @@ export class DeskScene {
 
   _enterTerminal() {
     this.controls.enabled = false;
+    this.inTransition = true;
     document.body.style.cursor = "default";
     this.isHoveringMonitor = false;
     if (this.onTerminalOpen) this.onTerminalOpen();
 
-    // Zoom camera toward the monitor before opening terminal
-    const monitorPos = new THREE.Vector3(...MODELS.monitor.position);
+    // Find the actual screen mesh centre in world space
+    const screenPos = new THREE.Vector3();
+    let foundScreen = false;
+    if (this.monitorModel) {
+      this.monitorModel.traverse((child) => {
+        if (child.name === MONITOR_CONFIG.screen.meshName && !foundScreen) {
+          child.getWorldPosition(screenPos);
+          foundScreen = true;
+        }
+      });
+    }
+    if (!foundScreen) screenPos.set(0, 0.55, 0.15);
 
+    const DURATION = 2.0;
+
+    // Snap to face the screen before moving so there's no jarring rotation
+    this.camera.lookAt(screenPos);
+
+    // Pull camera directly toward the screen face
     gsap.to(this.camera.position, {
-      x: 0,
-      y: 1.0,
-      z: 1.2,
-      duration: 1.2,
-      ease: "power2.inOut",
-      onUpdate: () => {
-        this.camera.lookAt(monitorPos);
-      },
+      x: screenPos.x,
+      y: screenPos.y,
+      z: screenPos.z + 0.25,
+      duration: DURATION,
+      ease: "power3.in",
+      onUpdate: () => this.camera.lookAt(screenPos),
+    });
+
+    // Flash kicks in at 88% of the tween — camera is close before it fires
+    setTimeout(() => this._flashAndEnter(), DURATION * 880);
+  }
+
+  _flashAndEnter() {
+    const flash = document.createElement("div");
+    flash.style.cssText = `
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at center, #00ff41 0%, #001a00 60%, #000000 100%);
+      opacity: 0;
+      z-index: 100;
+      pointer-events: none;
+    `;
+    document.body.appendChild(flash);
+
+    gsap.to(flash, {
+      opacity: 1,
+      duration: 0.25,
+      ease: "power3.in",
       onComplete: () => {
         this.terminal.enter();
+        gsap.to(flash, {
+          opacity: 0,
+          duration: 0.6,
+          delay: 0.15,
+          ease: "power2.out",
+          onComplete: () => flash.remove(),
+        });
       },
     });
   }
