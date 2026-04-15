@@ -25,6 +25,22 @@ export function createNeuralNetwork(scene, bubblePositions) {
     return mat;
   }
 
+  function makeNode(pos, radius, color) {
+    const geo = new THREE.SphereGeometry(radius, 16, 16);
+    const mat = new THREE.MeshBasicMaterial({
+      color,
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.copy(pos);
+    group.add(mesh);
+    toDispose.push(geo, mat);
+    return mat;
+  }
+
   // White node at each bubble
   const bubbleNodeMats = nodeVecs.map((v) => makeNode(v, 0.75, 0xffffff));
 
