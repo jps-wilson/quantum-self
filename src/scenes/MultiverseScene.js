@@ -5,10 +5,7 @@ import { createStars } from "./multiverse/createStars.js";
 import { createBubbles, BUBBLE_DATA } from "./multiverse/createBubbles.js";
 import { createLights } from "./multiverse/createLights.js";
 import { MultiverseUI } from "../ui/MultiverseUI.js";
-import {
-  createChosenSelf,
-  createAlternateSelves,
-} from "./multiverse/createSelf.js";
+import { createAlternateSelves } from "./multiverse/createSelf.js";
 import { createNeuralNetwork } from "./multiverse/createNeuralNetwork.js";
 import { QUESTIONS } from "../data/questions.js";
 
@@ -54,8 +51,10 @@ export class MultiverseScene {
     this.lights = [];
 
     this.ui = null;
+    this.homeBubbleIndex = -1;
+    this._lastInsideIndex = -1;
+    this.alternateData = {};
     this.chosenSilhouettes = [];
-    this.alternateClouds = [];
     this.neuralNetwork = null;
 
     this.ambientAudio = null;
@@ -135,50 +134,10 @@ export class MultiverseScene {
     window.addEventListener("resize", this._onResize);
 
     // UI - question panel and narrative overlays
-    this.ui = new MultiverseUI(this.camera);
-    this.ui.init(
-      BUBBLE_DATA.map((b) => ({
-        x: b.pos[0],
-        y: b.pos[1],
-        z: b.pos[2],
-        radius: b.radius,
-      })),
-    );
-    this.ui.onAnswer = (questionId, answerId) => {
-      const question = QUESTIONS[questionId];
-      const bd = BUBBLE_DATA[questionId];
-      if (!bd) return;
-      const bubblePos = { x: bd.pos[0], y: bd.pos[1], z: bd.pos[2] };
-
-      // Chosen self silhouette inside the bubble
-      const chosen = createChosenSelf(
-        this.scene,
-        bubblePos,
-        bd.radius,
-        answerId,
-      );
-      this.chosenSilhouettes.push(chosen);
-
-      // Ghostly alternate selves outside the bubble
-      const alternates = createAlternateSelves(
-        this.scene,
-        bubblePos,
-        bd.radius,
-        answerId,
-        question.answers,
-      );
-      this.alternateClouds.push(...alternates);
-
-      // Once all three questions answered - reveal the neural network
-      if (Object.keys(this.ui.answers).length === QUESTIONS.length) {
-        setTimeout(() => {
-          this.neuralNetwork = createNeuralNetwork(
-            this.scene,
-            BUBBLE_DATA.map((b) => ({ x: b.pos[0], y: b.pos[1], z: b.pos[2] })),
-          );
-        }, 1500);
-      }
-      console.log(`Question ${questionId} answered: ${answerId}`);
+    this.ui = new MultiverseUI();
+    this.ui.onAnswer = () => {};
+    this.ui.onHomeComplete = (homeAnswers) => {
+      this._onHomeComplete(homeAnswers);
     };
   }
 
@@ -268,15 +227,17 @@ export class MultiverseScene {
     this.chosenSilhouettes.forEach((s) => s.dispose());
     this.chosenSilhouettes = [];
 
-    // Alternate self particle clouds
-    this.alternateClouds.forEach((a) => a.dispose());
-    this.alternateClouds = [];
-
     // Neural network
     if (this.neuralNetwork) {
       this.neuralNetwork.dispose();
       this.neuralNetwork = null;
     }
+
+    this.homeBubbleIndex = -1;
+    this._lastInsideIndex = -1;
+    this.alternateData = {};
+    const ripple = document.getElementById("bubble-ripple");
+    if (ripple) ripple.remove();
 
     // Audio
     if (this._startAudio) {
@@ -345,12 +306,13 @@ export class MultiverseScene {
       });
     });
 
-    this.alternateClouds.forEach(({ ringData }) => {
-      ringData.forEach(({ ring }) => {
-        ring.rotation.x += ring.userData.rx * 0.5;
-        ring.rotation.y += ring.userData.ry * 0.5;
-      });
-    });
+    const insideIndex = this._getInsideBubbleIndex();
+    if (insideIndex !== this._lastInsideIndex) {
+      if (this._lastInsideIndex !== -1)
+        this._onBubbleExit(this._lastInsideIndex);
+      if (insideIndex !== -1) this._onBubbleEnter(insideIndex);
+      this._lastInsideIndex = insideIndex;
+    }
 
     if (this.ui) {
       this.ui.update(this.camera, this.renderer);
@@ -392,5 +354,99 @@ export class MultiverseScene {
           once: true,
         });
       });
+  }
+
+  _onHomeComplete(homeAnswers) {
+    const hb = BUBBLE_DATA[this.homeBubbleIndex];
+    const bubblePos = { x: hb.pos[0], y: hb.pos[1], z: hb.pos[2] };
+    const lastAnswerId = homeAnswers[2] ?? homeAnswers[1] ?? homeAnswers[0];
+    const chosen = createChosenSelf(
+      this.scene,
+      bubblePos,
+      hb.radius,
+      lastAnswerId,
+    );
+    chosen.bubbleIndex = this.homeBubbleIndex;
+    this.chosenSilhouettes.push(chosen);
+
+    const otherIndices = [0, 1, 2].filter((i) => i !== this.homeBubbleIndex);
+    otherIndices.forEach((bubbleIdx, i) => {
+      const question = QUESTIONS[i];
+      const altAnswer = question.answers.find((a) => a.id !== homeAnswers[i]);
+      this.alternateData[bubbleIdx] = {
+        answerId: altAnswer.id,
+        selfName: altAnswer.selfName,
+        narrative: `When asked "${question.text}", this version of you chose "${altAnswer.text.toLowerCase()}" — ${altAnswer.narrative}`,
+      };
+    });
+
+    setTimeout(() => {
+      this.neuralNetwork = createNeuralNetwork(
+        this.scene,
+        BUBBLE_DATA.map((b) => ({ x: b.pos[0], y: b.pos[1], z: b.pos[2] })),
+      );
+    }, 1500);
+  }
+
+  _getInsideBubbleIndex() {
+    for (let i = 0; i < BUBBLE_DATA.length; i++) {
+      const b = BUBBLE_DATA[i];
+      const dx = this.camera.position.x - b.pos[0];
+      const dy = this.camera.position.y - b.pos[1];
+      const dz = this.camera.position.z - b.pos[2];
+      if (Math.sqrt(dx * dx + dy * dy + dz * dz) < b.radius * 0.9) return i;
+    }
+    return -1;
+  }
+
+  _onBubbleEnter(index) {
+    const b = BUBBLE_DATA[index];
+    this._triggerRipple(b.halo);
+    this.scene.fog = new THREE.FogExp2(b.halo, 0.028);
+
+    if (this.homeBubbleIndex === -1) {
+      this.homeBubbleIndex = index;
+      this.ui.startHomeSequence();
+    } else if (index !== this.homeBubbleIndex) {
+      const altData = this.alternateData[index];
+      if (altData) {
+        this.ui.showAlternateContent(altData.selfName, altData.narrative);
+        const alreadyCreated = this.chosenSilhouettes.some(
+          (s) => s.bubbleIndex === index,
+        );
+        if (!alreadyCreated) {
+          const bp = { x: b.pos[0], y: b.pos[1], z: b.pos[2] };
+          const chosen = createChosenSelf(
+            this.scene,
+            bp,
+            b.radius,
+            altData.answerId,
+          );
+          chosen.bubbleIndex = index;
+          this.chosenSilhouettes.push(chosen);
+        }
+      }
+    }
+  }
+
+  _onBubbleExit(index) {
+    this.scene.fog = new THREE.FogExp2(0x05030f, 0.006);
+    if (index !== this.homeBubbleIndex) {
+      this.ui.clearAlternateContent();
+    }
+  }
+
+  _triggerRipple(color) {
+    const hex = "#" + color.toString(16).padStart(6, "0");
+    let ripple = document.getElementById("bubble-ripple");
+    if (!ripple) {
+      ripple = document.createElement("div");
+      ripple.id = "bubble-ripple";
+      document.body.appendChild(ripple);
+    }
+    ripple.style.background = `radial-gradient(circle at center, ${hex}55, transparent 65%)`;
+    ripple.classList.remove("active");
+    void ripple.offsetWidth;
+    ripple.classList.add("active");
   }
 }

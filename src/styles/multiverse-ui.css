@@ -152,3 +152,64 @@
 #portrait-backdrop {
   background: rgba(0, 0, 0, 0.55);
 }
+
+/* Centered panels - used inside bubbles instead of 3D tracking */
+.question-panel.centered,
+.narrative-panel.centered {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Portrait close button */
+.portrait-close {
+  display: inline-block;
+  margin-top: 1.5rem;
+  background: transparent;
+  border: 1px solid rgba(255, 170, 60, 0.4);
+  border-radius: 4px;
+  color: rgba(255, 200, 100, 0.7);
+  font-family: monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  padding: 0.5rem 1.25rem;
+  cursor: pointer;
+  pointer-events: auto;
+  transition:
+    color 0.2s,
+    border-color 0.2s;
+}
+
+.portrait-close:hover {
+  color: #ffcc66;
+  border-color: rgba(255, 170, 60, 0.8);
+}
+
+/* Bubble entry ripple - full screen flash on crossing a bubble surface */
+#bubble-ripple.active {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 15;
+}
+
+#bubble-ripple.active {
+  animation: bubble-ripple 1.2s ease-out forwards;
+}
+
+@keyframes bubble-ripple {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  25% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.4);
+  }
+}
