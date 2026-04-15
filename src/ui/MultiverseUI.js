@@ -98,13 +98,32 @@ export class MultiverseUI {
     );
 
     // Update narrative panel screen positions
-    this.narrativePanels.forEach(({ el, worldPos }) => {
-      const screen = this._worldToScreen(worldPos, camera, width, height);
-      if (screen.z < 1) {
-        el.style.left = `${screen.x}px`;
-        el.style.top = `${screen.y}px`;
-      }
-    });
+    this.narrativePanels.forEach(
+      ({ el, worldPos, bubblePos, proximityThreshold }) => {
+        const dx = camera.position.x - bubblePos.x;
+        const dy = camera.position.y - bubblePos.y;
+        const dz = camera.position.z - bubblePos.z;
+        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (dist > proximityThreshold) {
+          el.classList.remove("visible");
+          return;
+        }
+        const screen = this._worldToScreen(worldPos, camera, width, height);
+        if (
+          screen.z < 1 &&
+          screen.x > 0 &&
+          screen.x < width &&
+          screen.y > 0 &&
+          screen.y < height
+        ) {
+          el.style.left = `${screen.x}px`;
+          el.style.top = `${screen.y}px`;
+          el.classList.add("visible");
+        } else {
+          el.classList.remove("visible");
+        }
+      },
+    );
   }
 
   // --- Answer handling ------------------------------------------------
@@ -166,24 +185,34 @@ export class MultiverseUI {
         const qId = parseInt(btn.dataset.question);
         const aId = btn.dataset.answer;
         const panel = this.questionPanels.find((p) => p.questionId === qId);
-        this.recordAnswer(qId, aId, panel?.worldPos ?? { x: 0, y: 0, z: 0 });
+        this.recordAnswer(qId, aId, panel?.bubblePos ?? { x: 0, y: 0, z: 0 });
       });
     });
 
     return el;
   }
 
-  _showNarrative(answer, worldPos) {
+  _showNarrative(answer, bubblePos) {
+    const radius = bubblePos.radius || 8;
+    const worldPos = {
+      x: bubblePos.x,
+      y: bubblePos.y + radius * 0.55,
+      z: bubblePos.z + radius * 0.65,
+    };
+
     const el = document.createElement("div");
     el.className = "narrative-panel";
     el.innerHTML = `
-            <div class="self-name">${answer.selfName}</div>
-            <div class="self-text">${answer.narrative}</div>
-        `;
+      <div class="self-name">${answer.selfName}</div>
+      <div class="self-text">${answer.narrative}</div>
+    `;
     this.container.appendChild(el);
-    this.narrativePanels.push({ el, worldPos });
-
-    // Fade in after a short delay
+    this.narrativePanels.push({
+      el,
+      worldPos,
+      bubblePos,
+      proximityThreshold: radius * 2.8,
+    });
     setTimeout(() => el.classList.add("visible"), 100);
   }
 
