@@ -151,7 +151,12 @@ export class MultiverseScene {
       const bubblePos = { x: bd.pos[0], y: bd.pos[1], z: bd.pos[2] };
 
       // Chosen self silhouette inside the bubble
-      const chosen = createChosenSelf(this.scene, bubblePos, bd.radius);
+      const chosen = createChosenSelf(
+        this.scene,
+        bubblePos,
+        bd.radius,
+        answerId,
+      );
       this.chosenSilhouettes.push(chosen);
 
       // Ghostly alternate selves outside the bubble
@@ -333,8 +338,18 @@ export class MultiverseScene {
       this.nebula.rotation.x = time * 0.002;
     }
 
-    this.chosenSilhouettes.forEach(({ mesh }) => {
-      mesh.lookAt(this.camera.position);
+    this.chosenSilhouettes.forEach(({ ringData }) => {
+      ringData.forEach(({ ring }) => {
+        ring.rotation.x += ring.userData.rx;
+        ring.rotation.y += ring.userData.ry;
+      });
+    });
+
+    this.alternateClouds.forEach(({ ringData }) => {
+      ringData.forEach(({ ring }) => {
+        ring.rotation.x += ring.userData.rx * 0.5;
+        ring.rotation.y += ring.userData.ry * 0.5;
+      });
     });
 
     if (this.ui) {
