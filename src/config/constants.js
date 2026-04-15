@@ -12,7 +12,7 @@ export const SCENE_CONFIG = {
   },
   lighting: {
     ambient: { color: 0x8090a0, intensity: 1.0 },
-    bulb: { color: 0xffc87a, intensity: 40, distance: 80, position: [0, 0, 0] },
+    bulb: { color: 0xffc87a, intensity: 40, distance: 14, decay: 2, position: [0, 0, 0] },
   },
 };
 

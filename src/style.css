@@ -8,3 +8,53 @@
 @import url("./styles/crt-effect.css");
 @import url("./styles/welcome.css");
 @import url("./styles/multiverse-ui.css");
+
+.hud-btn {
+  position: fixed;
+  background: rgba(5, 3, 15, 0.75);
+  border: 1px solid rgba(150, 80, 255, 0.35);
+  border-radius: 4px;
+  color: rgba(200, 200, 255, 0.7);
+  font-family: monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  padding: 0.4rem 0.85rem;
+  cursor: pointer;
+  z-index: 50;
+  transition:
+    opacity 0.4s,
+    border-color 0.2s,
+    color 0.2s;
+  backdrop-filter: blur(4px);
+}
+
+.hud-btn:hover {
+  border-color: rgba(150, 80, 255, 0.75);
+  color: #fff;
+}
+
+#mute-btn {
+  bottom: 1.5rem;
+  right: 1.5rem;
+}
+
+.hud-btn--skip {
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+#return-btn {
+  top: 1.5rem;
+  right: 1.5rem;
+}
+
+#restart-btn {
+  top: 4.5rem;
+  right: 1.5rem;
+}
+
+.hud-btn.hidden {
+  opacity: 0;
+  pointer-events: none;
+}

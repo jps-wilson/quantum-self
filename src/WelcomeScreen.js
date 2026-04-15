@@ -12,12 +12,48 @@ export class WelcomeScreen {
   // Returns a Promise that resolves when the user dismisses the screen
   show() {
     return new Promise((resolve) => {
-      // Wait for button click
       this.btn.addEventListener("click", () => {
-        // Fade out
-        this.el.classList.add("hidden");
+        // Prevent double-clicks
+        this.btn.disabled = true;
 
-        // Wait for fade to finish then remove from view and resolve
+        // Step 1: flash the button green, change text
+        this.btn.classList.add("activating");
+        this.btn.textContent = "INITIALIZING...";
+
+        // Step 2: after a short beat, flicker status then fade
+        setTimeout(() => {
+          this._typeStatus(resolve);
+        }, 200);
+      });
+    });
+  }
+
+  // Resets button + subtitle so show() can be called again
+  reset() {
+    this.btn.disabled = false;
+    this.btn.classList.remove("activating");
+    this.btn.textContent = "ENTER THE SYSTEM";
+    const subtitle = document.getElementById("welcome-subtitle");
+    subtitle.style.color = "";
+    subtitle.textContent = "A journey through infinite versions of you";
+  }
+
+  // Briefly flickers status text in the subtitle area before fading the screen
+  _typeStatus(resolve) {
+    const subtitle = document.getElementById("welcome-subtitle");
+    const lines = [
+      "loading multiverse...",
+    ];
+    let i = 0;
+
+    const tick = () => {
+      if (i < lines.length) {
+        subtitle.style.color = "#00ff41";
+        subtitle.textContent = lines[i++];
+        setTimeout(tick, 220);
+      } else {
+        // All lines shown — fade the whole screen out
+        this.el.classList.add("hidden");
         this.el.addEventListener(
           "transitionend",
           () => {
@@ -26,7 +62,9 @@ export class WelcomeScreen {
           },
           { once: true },
         );
-      });
-    });
+      }
+    };
+
+    tick();
   }
 }

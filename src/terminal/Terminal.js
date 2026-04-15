@@ -88,6 +88,25 @@ export class Terminal {
     this.terminalEl.style.display = "none";
   }
 
+  // resets terminal to blank slate so enter() can be called again
+  reset() {
+    // restore visibility
+    this.terminalEl.style.display = "";
+    this.terminalEl.style.opacity = "1";
+    this.terminalEl.style.transition = "";
+    this.terminalEl.classList.remove("entering", "active");
+
+    // clear previous session output
+    this.outputEl.innerHTML = "";
+
+    // reset internal state
+    this.phase = null;
+    this.userInput = "";
+    this.username = "";
+    this._setPrompt("");
+    this._hideInput();
+  }
+
   // PRIVATE METHODS
   _addLine(text, color = "white") {
     const line = document.createElement("div");

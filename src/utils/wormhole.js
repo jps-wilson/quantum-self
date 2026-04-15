@@ -218,6 +218,24 @@ export class Wormhole {
   }
 
   /**
+   * Regenerate the wormhole after a previous dispose() call.
+   * Textures are already loaded so only geometry/materials need rebuilding.
+   */
+  regenerate() {
+    // Reset animation state
+    this.wormhole.active = false;
+    this.wormhole.speed = 0;
+    this.wormhole.percentage = 0;
+    this.wormhole.cameraIndex = 0;
+    this.wormholeTimeline = null;
+    this.wormholeTubeMesh = null;
+    this.wormholeGeometry = null;
+
+    // Rebuild geometry and materials from existing textures
+    this.generate();
+  }
+
+  /**
    * Activate the wormhole
    */
   active() {

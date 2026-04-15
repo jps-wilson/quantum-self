@@ -29,7 +29,7 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFShadowMap;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.2;
 document.getElementById("three-container").appendChild(renderer.domElement);
@@ -54,8 +54,12 @@ const bulbLight = new THREE.PointLight(
   SCENE_CONFIG.lighting.bulb.color,
   SCENE_CONFIG.lighting.bulb.intensity,
   SCENE_CONFIG.lighting.bulb.distance,
+  SCENE_CONFIG.lighting.bulb.decay,
 );
 bulbLight.castShadow = true;
+bulbLight.shadow.mapSize.width = 1024;
+bulbLight.shadow.mapSize.height = 1024;
+bulbLight.shadow.radius = 4; // softens shadow edge with PCFSoft
 
 // ============================================
 //           WORMHOLE SETUP
@@ -63,6 +67,24 @@ bulbLight.castShadow = true;
 
 const wormhole = new Wormhole(scene);
 let multiverseScene = null;
+let welcomeScreen = null; // module-scope so restart can reuse it
+
+let wormholeAudio = null;
+let _resolveSkip = null;
+let isMuted = false;
+
+// Bulb flicker — populated after light model loads
+const filamentMats = [];
+const bulbGlassMats = [];
+
+function applyMuteState() {
+  computerHum.muted = isMuted;
+  if (wormholeAudio) wormholeAudio.muted = isMuted;
+  if (multiverseScene?.ambientAudio)
+    multiverseScene.ambientAudio.muted = isMuted;
+  if (deskScene?.audioListener)
+    deskScene.audioListener.setMasterVolume(isMuted ? 0 : 1);
+}
 
 const computerHum = new Audio("/audio/pulse.mp3");
 computerHum.loop = true;
@@ -72,7 +94,6 @@ computerHum.volume = 1;
 async function onTransitionStart() {
   console.log("Starting wormhole transition...");
 
-  // 1. Fade out terminal and computer hum together (1 second), then hide terminal
   terminal.fadeOut(1000);
   gsap.to(computerHum, {
     volume: 0,
@@ -82,44 +103,68 @@ async function onTransitionStart() {
   await new Promise((resolve) => setTimeout(resolve, 1000));
   terminal.hide();
 
-  // 2. Disable controls
   controls.enabled = false;
   controls.domElement.style.pointerEvents = "none";
-
-  // 3. Hide desk/monitor
   hideDeskScene();
 
-  // 4. Activate wormhole
+  // Rebuild wormhole if it was disposed after a previous run
+  if (!wormhole.wormholeTubeMesh) {
+    wormhole.regenerate();
+  }
   wormhole.active();
 
-  // 5. Start wormhole audio (fade in over 3s)
   const audio = new Audio("/audio/wormhole.wav");
+  wormholeAudio = audio;
   audio.loop = true;
   audio.volume = 0;
+  if (isMuted) audio.muted = true;
   audio.play();
   gsap.to(audio, { volume: 0.8, duration: 3 });
 
-  // 6. Start wormhole — also begin building the tunnel-exit light 4s before it ends
   const flash = document.getElementById("transition-flash");
+  flash.style.transition = "none";
+  flash.style.opacity = "0";
   const WORMHOLE_DURATION = 19000;
   const FLASH_BUILDUP = 4000;
 
+  const skipBtn = document.getElementById("skip-btn");
+  skipBtn.classList.remove("hidden");
+
   const flashBuildupTimer = setTimeout(() => {
-    // Fade out wormhole audio and flash to white
     flash.style.transition = `opacity ${FLASH_BUILDUP / 1000}s ease-in`;
     flash.style.opacity = "1";
     gsap.to(audio, { volume: 0, duration: FLASH_BUILDUP / 1000 });
   }, WORMHOLE_DURATION - FLASH_BUILDUP);
 
-  await wormhole.animate();
-  clearTimeout(flashBuildupTimer);
+  // Race: natural completion vs skip button
+  const skipPromise = new Promise((resolve) => {
+    _resolveSkip = resolve;
+  });
+  const skipped = await Promise.race([
+    wormhole.animate().then(() => false),
+    skipPromise.then(() => true),
+  ]);
 
-  // 7. Dispose wormhole and load multiverse underneath while still white
+  clearTimeout(flashBuildupTimer);
+  skipBtn.classList.add("hidden");
+  _resolveSkip = null;
+
+  if (skipped) {
+    wormhole.wormholeTimeline?.kill();
+    gsap.killTweensOf(audio);
+    gsap.to(audio, { volume: 0, duration: 0.3 });
+    flash.style.transition = "opacity 0.5s ease-in";
+    flash.style.opacity = "1";
+    await new Promise((resolve) => setTimeout(resolve, 600));
+  }
+
   audio.pause();
+  wormholeAudio = null;
   wormhole.dispose();
   sceneManager.setScene(multiverseScene);
+  document.getElementById("return-btn").classList.remove("hidden");
+  document.getElementById("restart-btn").classList.remove("hidden");
 
-  // 8. Fade the white light out to reveal the void
   await new Promise((resolve) => {
     flash.style.transition = "opacity 2s ease-out";
     flash.style.opacity = "0";
@@ -148,13 +193,82 @@ deskScene.onTerminalOpen = () => {
   computerHum.currentTime = 0;
 };
 
+// ── HUD button wiring ────────────────────────────────────────────────────
+
+document.getElementById("mute-btn").addEventListener("click", () => {
+  isMuted = !isMuted;
+  document.getElementById("mute-btn").textContent = isMuted ? "🔇" : "🔊";
+  applyMuteState();
+});
+
+document.getElementById("skip-btn").addEventListener("click", () => {
+  if (_resolveSkip) {
+    _resolveSkip();
+    _resolveSkip = null;
+  }
+});
+
+document.getElementById("return-btn").addEventListener("click", async () => {
+  document.getElementById("return-btn").classList.add("hidden");
+  document.getElementById("restart-btn").classList.add("hidden");
+
+  const overlay = document.createElement("div");
+  overlay.style.cssText = `
+    position: fixed; inset: 0; background: #000;
+    opacity: 0; z-index: 100; pointer-events: none;
+    transition: opacity 0.8s ease;
+  `;
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => { overlay.style.opacity = "1"; });
+  await new Promise((resolve) => setTimeout(resolve, 900));
+
+  camera.position.set(...SCENE_CONFIG.camera.position);
+  camera.lookAt(0, 1, 0);
+  sceneManager.setScene(deskScene);
+
+  overlay.style.opacity = "0";
+  await new Promise((resolve) => setTimeout(resolve, 800));
+  overlay.remove();
+});
+
+document.getElementById("restart-btn").addEventListener("click", async () => {
+  document.getElementById("restart-btn").classList.add("hidden");
+  document.getElementById("return-btn").classList.add("hidden");
+
+  const overlay = document.createElement("div");
+  overlay.style.cssText = `
+    position: fixed; inset: 0; background: #000;
+    opacity: 0; z-index: 200; pointer-events: none;
+    transition: opacity 0.8s ease;
+  `;
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => { overlay.style.opacity = "1"; });
+  await new Promise((resolve) => setTimeout(resolve, 900));
+
+  camera.position.set(...SCENE_CONFIG.camera.position);
+  camera.lookAt(0, 1, 0);
+  sceneManager.setScene(deskScene);
+
+  // Reset and re-show the welcome screen (with full button feedback)
+  welcomeScreen.reset();
+  const welcomeEl = document.getElementById("welcome-screen");
+  welcomeEl.style.display = "";
+  requestAnimationFrame(() => welcomeEl.classList.remove("hidden"));
+
+  overlay.style.opacity = "0";
+  await new Promise((resolve) => setTimeout(resolve, 800));
+  overlay.remove();
+
+  await welcomeScreen.show();
+});
+
 // ============================================
 //              INITIALIZATION
 // ============================================
 
 async function init() {
   // Show welcome screen and wait for user to dismiss it
-  const welcomeScreen = new WelcomeScreen();
+  welcomeScreen = new WelcomeScreen();
   await welcomeScreen.show();
 
   console.log("Loading assets...");
@@ -177,9 +291,13 @@ async function init() {
     if (child.isMesh && BULB_MESHES.includes(child.name)) {
       child.material = child.material.clone();
       child.material.emissive = new THREE.Color(0xffb347);
-      child.material.emissiveIntensity = child.name.includes("filament")
-        ? 3.5
-        : 1.5;
+      if (child.name.includes("filament")) {
+        child.material.emissiveIntensity = 3.5;
+        filamentMats.push(child.material);
+      } else {
+        child.material.emissiveIntensity = 1.5;
+        bulbGlassMats.push(child.material);
+      }
     }
   });
 
@@ -244,6 +362,14 @@ function animate(timestamp = 0) {
 
   // Update wormhole camera movement if active
   wormhole.update(camera);
+
+  // Bulb flicker — subtle random variation on intensity and emissive
+  if (filamentMats.length > 0) {
+    const flicker = 1 + (Math.random() - 0.5) * 0.12;
+    bulbLight.intensity = 40 * flicker;
+    for (const mat of filamentMats) mat.emissiveIntensity = 3.5 * flicker;
+    for (const mat of bulbGlassMats) mat.emissiveIntensity = 1.5 * flicker;
+  }
 
   // Scale monitor pulse volume by distance from the monitor
   if (!computerHum.paused) {

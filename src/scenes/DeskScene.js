@@ -82,8 +82,20 @@ export class DeskScene {
 
   // called when scene becomes active
   enter() {
+    // Re-show desk objects hidden on exit
+    this.scene.traverse((obj) => {
+      if (obj.userData.isDesk || obj.userData.isMonitor) {
+        obj.visible = true;
+      }
+    });
+
+    // Reset any leftover transition state
+    this.inTransition = false;
+    if (this.screenMaterial) {
+      this.screenMaterial.emissiveIntensity = MONITOR_CONFIG.screen.emissiveBase;
+    }
+
     this.controls.enabled = true;
-    // resume audio if it was paused
     if (this.computerHum) {
       this.computerHum.play();
     }
@@ -292,6 +304,7 @@ export class DeskScene {
       duration: 0.25,
       ease: "power3.in",
       onComplete: () => {
+        this.terminal.reset();
         this.terminal.enter();
         gsap.to(flash, {
           opacity: 0,
