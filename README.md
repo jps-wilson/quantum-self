@@ -179,4 +179,12 @@ Claude (Anthropic) was consulted during development for assistance with mathemat
 
 ---
 
+## License
+
+Copyright (c) 2026 Jess Wilson. All rights reserved.
+
+This project — including all source code, written narrative, visual design, and concept — is the intellectual property of Jess Wilson. Unauthorised copying, reproduction, modification, or distribution of any part of this project without the express prior written permission of the author is strictly prohibited. See the [LICENSE](./LICENSE) file for details.
+
+---
+
 _Jess Wilson — Web Design & Interaction, Term 3 Final Project_
